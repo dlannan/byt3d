@@ -1,0 +1,10 @@
+<byt3dProject type="table">
+	<projectInfo type="table">
+		<thumbnail type="string">byt3d/data/projects/thumbnails/tetris.png</thumbnail>
+		<genThumbnail type="number">1</genThumbnail>
+		<name type="string">tetris</name>
+		<datafolders type="table">
+			<1 type="string">byt3d/data</1>
+		</datafolders>
+	</projectInfo>
+</byt3dProject>

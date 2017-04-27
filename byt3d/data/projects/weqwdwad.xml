@@ -1,0 +1,23 @@
+<byt3dProject type="table">
+	<projectConfig type="table">
+		<ios type="table">
+		</ios>
+		<android type="table">
+		</android>
+		<osx type="table">
+		</osx>
+		<linux type="table">
+		</linux>
+		<blackberry type="table">
+		</blackberry>
+		<windows7 type="table">
+		</windows7>
+	</projectConfig>
+	<projectInfo type="table">
+		<datafolders type="table">
+			<1 type="string">byt3d/data</1>
+		</datafolders>
+		<name type="string">weqwdwad</name>
+		<thumbnail type="string"></thumbnail>
+	</projectInfo>
+</byt3dProject>
