@@ -1,0 +1,189 @@
+<byt3dModel type="table">
+	<boundCtr type="table">
+		<1 type="number">0</1>
+		<2 type="number">0</2>
+		<3 type="number">0</3>
+		<4 type="number">0</4>
+	</boundCtr>
+	<node type="table">
+		<nodeCount type="number">2</nodeCount>
+		<blockCount type="number">0</blockCount>
+		<working type="table">
+			<m type="table">
+				<1 type="number">1</1>
+				<2 type="number">0</2>
+				<3 type="number">0</3>
+				<4 type="number">0</4>
+				<5 type="number">0</5>
+				<6 type="number">1</6>
+				<7 type="number">0</7>
+				<8 type="number">0</8>
+				<9 type="number">0</9>
+				<10 type="number">0</10>
+				<11 type="number">1</11>
+				<12 type="number">0</12>
+				<13 type="number">0</13>
+				<14 type="number">0</14>
+				<15 type="number">0</15>
+				<16 type="number">1</16>
+			</m>
+		</working>
+		<transform type="table">
+			<m type="table">
+				<1 type="number">1</1>
+				<2 type="number">0</2>
+				<3 type="number">0</3>
+				<4 type="number">0</4>
+				<5 type="number">0</5>
+				<6 type="number">0</6>
+				<7 type="number">-1</7>
+				<8 type="number">0</8>
+				<9 type="number">0</9>
+				<10 type="number">1</10>
+				<11 type="number">0</11>
+				<12 type="number">0</12>
+				<13 type="number">0</13>
+				<14 type="number">0</14>
+				<15 type="number">0</15>
+				<16 type="number">1</16>
+			</m>
+		</transform>
+		<children type="table">
+			<Cannon type="table">
+				<nodeCount type="number">0</nodeCount>
+				<blockCount type="number">1</blockCount>
+				<working type="table">
+					<m type="table">
+						<1 type="number">1</1>
+						<2 type="number">0</2>
+						<3 type="number">0</3>
+						<4 type="number">0</4>
+						<5 type="number">0</5>
+						<6 type="number">1</6>
+						<7 type="number">0</7>
+						<8 type="number">0</8>
+						<9 type="number">0</9>
+						<10 type="number">0</10>
+						<11 type="number">1</11>
+						<12 type="number">0</12>
+						<13 type="number">0</13>
+						<14 type="number">0</14>
+						<15 type="number">0</15>
+						<16 type="number">1</16>
+					</m>
+				</working>
+				<transform type="table">
+					<m type="table">
+						<1 type="number">1</1>
+						<2 type="number">0</2>
+						<3 type="number">0</3>
+						<4 type="number">0</4>
+						<5 type="number">0</5>
+						<6 type="number">1</6>
+						<7 type="number">0</7>
+						<8 type="number">0</8>
+						<9 type="number">0</9>
+						<10 type="number">0</10>
+						<11 type="number">1</11>
+						<12 type="number">0</12>
+						<13 type="number">-0.00059270899510011</13>
+						<14 type="number">-0.24819299578667</14>
+						<15 type="number">-0.30505600571632</15>
+						<16 type="number">1</16>
+					</m>
+				</transform>
+				<blocks type="table">
+					<Cannon_mesh_1 type="table">
+						<boundCtr type="table">
+							<1 type="number">0</1>
+							<2 type="number">0</2>
+							<3 type="number">0</3>
+							<4 type="number">0</4>
+						</boundCtr>
+						<boundMin type="table">
+							<1 type="number">-3.0058450698853</1>
+							<2 type="number">-5.7367582321167</2>
+							<3 type="number">-2.31294298172</3>
+						</boundMin>
+						<shadows_cast type="number">1</shadows_cast>
+						<priority type="number">1024</priority>
+						<shadows_recv type="number">1</shadows_recv>
+						<blockType type="string">byt3dMesh</blockType>
+						<ibuffers type="table">
+							<1 type="table">
+								<vertBuffer type="cdata" ffitype="float" arraysize="107334">byt3d\editor\cache\meshes\Canon_dae_xml_1_vertBuffer.bin</vertBuffer>
+								<texCoordBuffer type="cdata" ffitype="float" arraysize="71556">byt3d\editor\cache\meshes\Canon_dae_xml_1_texCoordBuffer.bin</texCoordBuffer>
+								<indexBuffer type="cdata" ffitype="unsigned short" arraysize="35778">byt3d\editor\cache\meshes\Canon_dae_xml_1_indexBuffer.bin</indexBuffer>
+							</1>
+						</ibuffers>
+						<boundMax type="table">
+							<1 type="number">3.0058450698853</1>
+							<2 type="number">5.7367582321167</2>
+							<3 type="number">2.31294298172</3>
+						</boundMax>
+					</Cannon_mesh_1>
+				</blocks>
+			</Cannon>
+			<EnvironmentAmbientLight type="table">
+				<nodeCount type="number">0</nodeCount>
+				<blockCount type="number">0</blockCount>
+				<working type="table">
+					<m type="table">
+						<1 type="number">1</1>
+						<2 type="number">0</2>
+						<3 type="number">0</3>
+						<4 type="number">0</4>
+						<5 type="number">0</5>
+						<6 type="number">1</6>
+						<7 type="number">0</7>
+						<8 type="number">0</8>
+						<9 type="number">0</9>
+						<10 type="number">0</10>
+						<11 type="number">1</11>
+						<12 type="number">0</12>
+						<13 type="number">0</13>
+						<14 type="number">0</14>
+						<15 type="number">0</15>
+						<16 type="number">1</16>
+					</m>
+				</working>
+				<transform type="table">
+					<m type="table">
+						<1 type="number">1</1>
+						<2 type="number">0</2>
+						<3 type="number">0</3>
+						<4 type="number">0</4>
+						<5 type="number">0</5>
+						<6 type="number">1</6>
+						<7 type="number">0</7>
+						<8 type="number">0</8>
+						<9 type="number">0</9>
+						<10 type="number">0</10>
+						<11 type="number">1</11>
+						<12 type="number">0</12>
+						<13 type="number">0</13>
+						<14 type="number">0</14>
+						<15 type="number">0</15>
+						<16 type="number">1</16>
+					</m>
+				</transform>
+			</EnvironmentAmbientLight>
+		</children>
+	</node>
+	<boundMax type="table">
+		<1 type="number">3.0058450698853</1>
+		<2 type="number">5.7367582321167</2>
+		<3 type="number">2.31294298172</3>
+		<4 type="number">0</4>
+	</boundMax>
+	<boundMin type="table">
+		<1 type="number">-3.0058450698853</1>
+		<2 type="number">-5.7367582321167</2>
+		<3 type="number">-2.31294298172</3>
+		<4 type="number">0</4>
+	</boundMin>
+	<filePath type="string"></filePath>
+	<modelMat type="number">0</modelMat>
+	<fileName type="string"></fileName>
+	<name type="string">unnamed</name>
+</byt3dModel>

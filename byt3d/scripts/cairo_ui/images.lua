@@ -22,6 +22,19 @@ end
 
 ------------------------------------------------------------------------------------------------------------
 
+function images:CreateImageFromFBO( width, height, fboid )
+
+    gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, fboid)
+    local pixel_data = ffi.new("uint8_t["..(4*width*height).."]")
+
+    gles.glReadPixels(0, 0, width, height, gles.GL_RGBA, gles.GL_UNSIGNED_BYTE, pixel_data);
+    local newImage = self:PNGImage( width, height, pixel_data, 1 )
+    gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+    return newImage
+end
+
+------------------------------------------------------------------------------------------------------------
+
 function images:DataImage( width, height, indata )
 
 	local data = ffi.new( "uint8_t["..( width * height * 4 ).."]" )
@@ -33,6 +46,7 @@ function images:DataImage( width, height, indata )
 	local sf = cr.cairo_image_surface_create_for_data( data, cr.CAIRO_FORMAT_ARGB32, width, height, width * 4 );
 	local gen_name = "DataImage"..self.image_counter
 	local newImage = { name=gen_name, iname=gen_name, otype=CAIRO_TYPE.IMAGE, filename=nil, image=sf, data=data, width=width, height=height, scalex=1.0, scaley=1.0 }
+
 	self.imageList[gen_name] = newImage
 	self.image_counter = self.image_counter + 1
 
@@ -45,11 +59,11 @@ function images:PNGImage(w, h, data, swap_bgr)
 
     local newdata = ffi.new("uint8_t["..(w * h * 4).."]")
 
-    local ct = w * (h-1) * 4
-    for i=0, w * h * 4, 4 do
+    local ct = w * h * 4
+    for i=0, w * (h-1) * 4, 4 do
         local row = math.floor(i / (w * 4))
         local x = i - row * (w * 4)
-        local pos = (w * 4) * (h - row) + x
+        local pos = (w * 4) * (h - row - 1) + x
         if swap_bgr then
             newdata[i] = data[pos+2]
             newdata[i+1] = data[pos+1]
@@ -60,8 +74,8 @@ function images:PNGImage(w, h, data, swap_bgr)
         end
     end
 
-    image = self:DataImage(w, h, newdata)
-    return image
+    local png_image = self:DataImage(w, h, newdata)
+    return png_image
 end
 
 ------------------------------------------------------------------------------------------------------------

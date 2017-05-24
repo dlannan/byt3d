@@ -139,12 +139,12 @@ function SMainMenu:Begin()
 
     --- Loading in some models
 	self.canon = LoadModel("byt3d\\data\\models\\Brendan\\Canon.dae")
-	self.canon:SetShader(newshader)
+	self.canon:SetMeshProperty("shader", newshader)
 	self.canon:SetSamplerTex(newtex, "s_tex0")
 	self.canon.node.transform:Position(0.0, 0.0, 0.0)
 
     self.terrain1 = LoadModel("byt3d\\data\\terrain\\byt3d_Test01.obj")
-    self.terrain1:SetShader(tershader)
+    self.terrain1:SetMeshProperty("shader", tershader)
     self.terrain1:SetSamplerTex(tertex, "s_tex0")
     self.terrain1.node.transform:Position(0.0, 0.0, 0.0)
 
@@ -173,9 +173,9 @@ function SMainMenu:SetupEditor()
 	
 	newtex:FromCairoImage(Gcairo, "grid1", "byt3d/data/images/editor/grid_001.png")
 	newmodel:GeneratePlane(160, 160, 10)
-	newmodel:SetAlpha(1)
-	newmodel:SetPriority(999)
-	newmodel:SetShader(newshader)
+	newmodel:SetMeshProperty("alpha", 1)
+	newmodel:SetMeshProperty("priority", byt3dRender.EDITOR_ALPHA)
+	newmodel:SetMeshProperty("shader", newshader)
 
 	newmodel:SetSamplerTex(newtex, "s_tex0")
 	newmodel.node.transform:Position(0.0, 0.0, 0.0)
@@ -251,7 +251,7 @@ function NewCubeMesh(callerobj)
 		newmodel:GenerateCube(20.0, 2)
 		--newmodel:GeneratePlane(20.0, 20.0)
 		--newmodel:GenerateSphere(20.0, 5.0)
-		newmodel:SetShader(newshader)
+		newmodel:SetMeshProperty("shader", newshader)
 		newmodel:SetSamplerTex(newtex, "s_tex0")
 		
 		newmodel.node.transform:Position(x, 0.0, z)

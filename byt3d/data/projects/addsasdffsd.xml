@@ -1,13 +1,13 @@
 <byt3dProject type="table">
 	<projectInfo type="table">
+		<thumbnail type="string">byt3d/data/projects/thumbnails/addsasdffsd.png</thumbnail>
+		<filterMask type="number">65522</filterMask>
+		<occulusRift type="number">0</occulusRift>
+		<autoAssetConv type="number">1</autoAssetConv>
+		<genThumbnail type="number">1</genThumbnail>
+		<name type="string">addsasdffsd</name>
 		<datafolders type="table">
 			<1 type="string">byt3d/data</1>
 		</datafolders>
-		<autoAssetConv type="number">1</autoAssetConv>
-		<thumbnail type="string">byt3d/data/projects/thumbnails/addsasdffsd.png</thumbnail>
-		<name type="string">addsasdffsd</name>
-		<filterMask type="number">65522</filterMask>
-		<occulusRift type="number">0</occulusRift>
-		<genThumbnail type="number">1</genThumbnail>
 	</projectInfo>
 </byt3dProject>

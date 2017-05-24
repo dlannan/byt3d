@@ -8,6 +8,7 @@ uniform float time;
 uniform vec2 mouse;
 uniform vec2 resolution;
 
+varying vec2 		v_texCoord0;
 float scale = 2.3;
 
 vec3 getColour(vec2 p)
@@ -34,7 +35,7 @@ vec3 getColour(vec2 p)
 }
 
 void main(void) {
-	vec2 uPos = ( gl_FragCoord.xy / resolution.xy );//normalize wrt y axis
+	vec2 uPos = ( v_texCoord0.xy * 1024.0 / resolution.xy );//normalize wrt y axis
 	uPos.x += (time+10.) / 12.0;
 	uPos.y -= (time+10.) / 10.0;
 

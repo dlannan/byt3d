@@ -69,7 +69,7 @@ AddLibrary(cairo_ui, "scripts/cairo_ui/widget_handlers")
 
 ------------------------------------------------------------------------------------------------------------
 
-cairo_ui.ibuffer 		= ffi.new( "unsigned short[6]", 1, 0, 2, 2, 3, 0 )
+cairo_ui.ibuffer 		= ffi.new( "unsigned short[6]", 1, 0, 2, 3, 2, 0 )
 cairo_ui.vertexArray 	= ffi.new( "float[12]", -1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,-1.0, 0.0, -1.0,-1.0, 0.0 )
 cairo_ui.texCoordArray 	= ffi.new( "float[8]", 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0 )
 
@@ -163,40 +163,40 @@ function cairo_ui:Reset()
 	------------------------------------------------------------------------------------------------------------
 	-- This list is checked for mouseover, mousedown, mouseup and mousemove type events
 	-- List is ordered based on declaration order. If you need a button to the front, then delete it and add it again.
-	self.objectList		= {}
+	self.objectList		    = {}
 	
 	------------------------------------------------------------------------------------------------------------
 	-- Simple cache for images - recommend preloading!!
 	self.imageList			= {}
 	
 	------------------------------------------------------------------------------------------------------------
-	self.WIDTH			= CAIRO_RENDER.DEFAULT_WIDTH
-	self.HEIGHT 		= CAIRO_RENDER.DEFAULT_HEIGHT
-	self.V_WIDTH		= CAIRO_RENDER.MAX_PIXEL_SIZE
-	self.V_HEIGHT 		= CAIRO_RENDER.MAX_PIXEL_SIZE
-	self.data 			= nil
-	self.tests 			= { "pdf", "svg", "png" }
+	self.WIDTH			    = CAIRO_RENDER.DEFAULT_WIDTH
+	self.HEIGHT 		    = CAIRO_RENDER.DEFAULT_HEIGHT
+	self.V_WIDTH		    = CAIRO_RENDER.MAX_PIXEL_SIZE
+	self.V_HEIGHT 		    = CAIRO_RENDER.MAX_PIXEL_SIZE
+	self.data 			    = nil
+	self.tests 			    = { "pdf", "svg", "png" }
 	
 	------------------------------------------------------------------------------------------------------------
 	-- Cairo Surface, Context and GL Texture Id
-	self.sf 			= nil
-	self.ctx 			= nil
+	self.sf 			    = nil
+	self.ctx 			    = nil
 	
 	-- OpenGLES Shader parameters
-	self.loc_position 	= nil
-	self.loc_texture  	= nil
-	self.loc_tex0     	= nil
+	self.loc_position 	    = nil
+	self.loc_texture  	    = nil
+	self.loc_tex0     	    = nil
 	
-	self.image_counter	= 1
+	self.image_counter	    = 1
 	------------------------------------------------------------------------------------------------------------
 	
-	self.lastMouseButton = {}
-	self.oldmx			 = 0	-- old mouse x
-	self.oldmy			 = 0	-- old mouse y
+	self.lastMouseButton    = {}
+	self.oldmx			    = 0	-- old mouse x
+	self.oldmy			    = 0	-- old mouse y
 	
 	------------------------------------------------------------------------------------------------------------
-	self.timeLast 		= os.clock()	
-	self.written 		= 0
+	self.timeLast 		    = os.clock()
+	self.written 		    = 0
 	
 	self.file_FileSelect 	= ""
 	self.file_LastSelect	= ""
@@ -206,6 +206,8 @@ function cairo_ui:Reset()
 	self.currdir 			= nil
 	self.dirlist			= nil
 	self.select_file		= -1
+
+    self.svgs               = {}
 	
 end 
 
@@ -229,25 +231,26 @@ function cairo_ui:Init(width, height)
 
 	-- Make a default surface we will render to
 	self.sf = cr.cairo_image_surface_create_for_data( self.data, cr.CAIRO_FORMAT_ARGB32, self.V_WIDTH, self.V_HEIGHT, self.V_WIDTH*4 );
+    self.device = cr.cairo_surface_get_device(self.sf)
 	self.ctx = cr.cairo_create( self.sf ); CAIRO_CHK(self.ctx)
 	
 	-- Use an available font - need to work out how to use local file based fonts or convert to scaled fonts.
 	cr.cairo_select_font_face( self.ctx, self.style.font_name, cr.CAIRO_FONT_SLANT_NORMAL, 0 ); CAIRO_CHK(self.ctx)
-		
+
 	-- Allocate a texture id for the surface to render to.
-	self.texId = TexExtension:GenerateId("CairoTexture")
-	gl.glBindTexture(gl.GL_TEXTURE_2D, self.texId)
-	-- This filtering should probably change - mipmap generation?
-	gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
-	gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
-	gl.glGenerateMipmap(gl.GL_TEXTURE_2D);
+    self.tex = byt3dTexture:NewTextureBuffer(self.V_WIDTH, self.V_HEIGHT)
 
 	-- Load and build the shader for cairo
 	-- self.uiShader = MakeShader( colour_shader, gui_shader )
 	self.uiShader = byt3dShader:NewProgram( colour_shader, gui_shader )
 	self.uiShader.name = "Shader_CairoGui"
-	
-	-- Find the shader parameters we will use
+
+    self.mesh = byt3dMesh:New()
+    self.mesh:SetShader(self.uiShader)
+    self.mesh:SetTexture(self.tex)
+    self.mesh.alpha = 1.0
+
+    -- Find the shader parameters we will use
 	self.loc_position = self.uiShader.vertexArray
 	self.loc_texture  = self.uiShader.texCoordArray[0]
 
@@ -257,7 +260,7 @@ function cairo_ui:Init(width, height)
 	self.scaleX = self.V_WIDTH / self.WIDTH 
 	self.scaleY = self.V_HEIGHT / self.HEIGHT
 	cr.cairo_scale(self.ctx, self.scaleX, self.scaleY)
-	
+
 	-- Builtin images for use with widgets
 	self.img_select = self:LoadImage("icon_tick", "byt3d/data/icons/generic_obj_tick_64.png")
 	self.img_folder	= self:LoadImage("icon_folder", "byt3d/data/icons/generic_obj_folder_64.png")
@@ -278,6 +281,8 @@ function cairo_ui:Init(width, height)
 	self.mouseScaleX = (self.WIDTH / sdl_screen.w )
 	self.mouseScaleY = (self.HEIGHT / sdl_screen.h)
 	print("Cairo MouseScale W/H:", self.mouseScaleX, self.mouseScaleY)
+
+    self.RenderFPS = self.InternalRenderFPS
 end
 
 ------------------------------------------------------------------------------------------------------------
@@ -303,11 +308,6 @@ function cairo_ui:Finish()
 --   
 --   self.ctx 	= nil
 --   self.sf 		= nil
-
-	-- Clear old ones before starting again
---	if self.texId then gl.glDeleteTextures(1, self.texId) end
-	-- Clear old shader - this is a shitty spot 
---	if self.uiShader then DeleteShader(self.uiShader) end      
 end
 
 ------------------------------------------------------------------------------------------------------------
@@ -352,6 +352,14 @@ function cairo_ui:Begin()
 	self.objectList 	= {}
 	self.objectCount 	= 1
 	self.image_counter = 1
+
+    -- Render any svgs
+    for k,v in pairs(self.svgs) do
+        cr.cairo_save (self.ctx)
+        if v.pos then cr.cairo_translate(self.ctx, v.pos.x, v.pos.y) end
+        self:RenderSvg(v)
+        cr.cairo_restore (self.ctx)
+    end
 end
 
 ------------------------------------------------------------------------------------------------------------
@@ -417,28 +425,29 @@ function cairo_ui:Update(mxi, myi, buttons)
 end
 
 ------------------------------------------------------------------------------------------------------------
--- Upon completion of rendering he Cairo surface pass it to the OpenGL texture
-once = 0 
+-- Render FPS system
 
-function cairo_ui:Render()
+function cairo_ui:InternalRenderFPS()
 
---	if written == 0 then 
---		cr.cairo_surface_write_to_png( sf, "world-map.png" ); CAIRO_CHK(ctx)
---		written = 1
---	end
-
-	-- Enable frameMs rendering for profiling.
+    -- Enable frameMs rendering for profiling.
     ttime = math.floor (os.clock())
-	if self.lastclock ~= ttime then
-        self.ms = string.format("Cairo FPS: %02.2f", WM_fps)
+    if self.lastclock ~= ttime then
+        self.ms = string.format("FPS: %02.2f", WM_fps)
         self.lastclock = ttime
     end
     self:RenderText(self.ms, 90, 18, 12)
+end
+
+------------------------------------------------------------------------------------------------------------
+-- Upon completion of rendering he Cairo surface pass it to the OpenGL texture
+
+function cairo_ui:Render()
+
+    if self.RenderFPS then self:RenderFPS() end
 
 	-- *** TODO:  Probably need to make this a little more freindly if we need multiple surfaces/layers  **** --
 	byt3dRender:ChangeShader(self.uiShader)
 	gl.glDisable ( gl.GL_DEPTH_TEST )
-	gl.glEnable ( gl.GL_BLEND)
 	gl.glBlendFunc ( gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 	
 -- print("Cairo_Shader Set", gl.glGetError())
@@ -446,23 +455,11 @@ function cairo_ui:Render()
 	gl.glUniform1f(self.loc_time, os.clock())
 
 	gl.glActiveTexture(gl.GL_TEXTURE0)
-	gl.glBindTexture(gl.GL_TEXTURE_2D, self.texId)
+	gl.glBindTexture(gl.GL_TEXTURE_2D, self.tex.textureId)
 	gl.glUniform1i(self.uiShader.samplerTex[0], 0)
 	gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, self.V_WIDTH, self.V_HEIGHT, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, self.data )
-       
-	gl.glVertexAttribPointer( self.loc_position, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, self.vertexArray )
-	gl.glEnableVertexAttribArray( self.loc_position ) 
-	gl.glVertexAttribPointer( self.loc_texture, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, self.texCoordArray )
-	gl.glEnableVertexAttribArray( self.loc_texture )
 
-	gl.glDrawElements( gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_SHORT, self.ibuffer )
-	-- gl.glDrawArrays( gl.GL_TRIANGLES, 0, 6 )
-
-	gl.glDisable ( gl.GL_BLEND)
-	gl.glDisableVertexAttribArray( self.loc_position )
-	gl.glDisableVertexAttribArray( self.loc_texture )
-	
-	gl.glFinish()
+    byt3dRender:RenderTexRect(self.mesh, -1, 1, 2, -2)
 end
 
 ------------------------------------------------------------------------------------------------------------
@@ -481,7 +478,9 @@ function cairo_ui:RenderBox(x, y, width, height, corner)
 	local colorA = self.style.button_color	
 	local colorB = self.style.button_border_color	
 	local border = self.style.border_width
-	
+
+    cr.cairo_save (self.ctx)
+
 	cr.cairo_set_source_rgba( self.ctx, colorA.r, colorA.g, colorA.b, colorA.a)
 	cr.cairo_new_path( self.ctx )
 	cr.cairo_arc( self.ctx,x + width - radius, y + radius, radius, -90 * degrees, 0 * degrees)
@@ -496,6 +495,7 @@ function cairo_ui:RenderBox(x, y, width, height, corner)
 	cr.cairo_set_line_width( self.ctx, border)
 	cr.cairo_stroke( self.ctx )
 
+    cr.cairo_restore (self.ctx)
 end
 
 ------------------------------------------------------------------------------------------------------------

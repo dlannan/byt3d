@@ -9,7 +9,9 @@
 ------------------------------------------------------------------------------------------------------------
 
 -- TODO: Geometry Shaders - for instancing and so forth. Need to fit in here nicely.
---       Whole thing needs a nit of a tidy-up.
+--       Whole thing needs a bit of a tidy-up.
+
+local gl   = require( "ffi/OpenGLES2" )
 
 ------------------------------------------------------------------------------------------------------------
 --	/// <summary>
@@ -36,7 +38,10 @@ byt3dShader =
 	viewProjMatrix	= -1,
 
     vertCode		= "",
-    fragCode		= ""
+    fragCode		= "",
+
+    -- Special user defined uniforms - name <-> uniformid mapping.
+    uniforms        = {}
 }
 
 ------------------------------------------------------------------------------------------------------------
@@ -200,6 +205,13 @@ end
 function byt3dShader:SetResolution( w, h )
 
 	gl.glUniform2f(self.loc_res, w, h )
+end
+
+------------------------------------------------------------------------------------------------------------
+
+function byt3dShader:SetProjectionMatrix( tproj )
+
+    gl.glUniformMatrix4fv(self.viewProjMatrix, 1, gl.GL_FALSE, tproj)
 end
 
 ------------------------------------------------------------------------------------------------------------

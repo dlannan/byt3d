@@ -60,10 +60,9 @@ function widgets:RenderCursor(name, x, y, width, height, tfade, cb)
 			self.style.image_color = {r=1, g=1, b=1, a=1}
 			mistate.state=CAIRO_STATE.SO_STATES.MOVING_OUT
 		end
-	end
 
 	-- Cursor Flashing
-	if mistate.state == CAIRO_STATE.SO_STATES.MOVING_OUT then
+	elseif mistate.state == CAIRO_STATE.SO_STATES.MOVING_OUT then
 		self.style.button_color = { r=1, g=1, b=1, a=mistate.alpha }
 		self:RenderBox( x, y, width, height, 0 )
 		if mistate.tween == nil then 
@@ -102,18 +101,18 @@ function widgets:RenderMultiImage(name, image_list, x, y, tdelay, tfade, cb)
 			self.style.image_color = {r=1, g=1, b=1, a=1}
 			mistate.state=CAIRO_STATE.SO_STATES.MOVING_OUT
 		end
-	end
+
 	-- Waiting for next fade out..
-	if mistate.state == CAIRO_STATE.SO_STATES.MOVING_OUT then
+	elseif mistate.state == CAIRO_STATE.SO_STATES.MOVING_OUT then
 		self:ButtonImage(name..string.format("_%03d", mistate.current), image_list[mistate.current], x, y, cb)
 		if mistate.tween == nil then 
 			mistate.tween = tween( tfade, mistate, { alpha=0.0 }, 'inQuad', TweenDone, self.multiImageStates, name )
 			self.style.image_color = {r=1, g=1, b=1, a=1}
 			mistate.state=CAIRO_STATE.SO_STATES.OUT
 		end
-	end
+
 	-- Fading out..
-	if mistate.state == CAIRO_STATE.SO_STATES.OUT then
+	elseif mistate.state == CAIRO_STATE.SO_STATES.OUT then
 		self.style.image_color = {r=1, g=1, b=1, a=mistate.alpha}
 		self:ButtonImage(name..string.format("_%03d", mistate.current), image_list[mistate.current], x, y, cb)
 		if mistate.tween == nil then 
@@ -129,7 +128,7 @@ end
 
 ------------------------------------------------------------------------------------------------------------
 
-function widgets:RenderMultiSlideImage(name, image_list, x, y, tdelay, sspeed, cb)
+function widgets:RenderMultiSlideImage(name, image_list, x, y, swidth, tdelay, sspeed, cb)
 	
 	local icount = table.getn(image_list)
 	if icount == 0 then return end
@@ -137,8 +136,10 @@ function widgets:RenderMultiSlideImage(name, image_list, x, y, tdelay, sspeed, c
 	if self.multiImageStates[name] == nil then 
 	
 		local timage = image_list[1]
-		local mistate = { name=name, xpos=x-timage.width * timage.scalex, state=CAIRO_STATE.SO_STATES.INITIAL, current=1 }
-		local newtween = tween( sspeed, mistate, { xpos=x }, 'inCubic', TweenDone, self.multiImageStates, name )
+        local imagex = timage.width * timage.scalex
+        local targetx = (x + swidth * 0.5) - imagex * 0.5
+		local mistate = { name=name, xpos=x-imagex, state=CAIRO_STATE.SO_STATES.INITIAL, current=1 }
+		local newtween = tween( sspeed, mistate, { xpos=targetx }, 'inCubic', TweenDone, self.multiImageStates, name )
 		mistate.tween = newtween
 		self.multiImageStates[name] = mistate
 	end
@@ -147,35 +148,42 @@ function widgets:RenderMultiSlideImage(name, image_list, x, y, tdelay, sspeed, c
 	-- print("State:", mistate.state, "Alpha:", mistate.alpha, "Tween:",mistate.tween)
 
 	local timage = image_list[mistate.current]
-	self:ClipRegion( x, y, timage.width * timage.scalex, timage.height * timage.scaley )
+
+	self:ClipRegion( x, y, swidth, timage.height * timage.scaley )
 		
 	local nameid = name..string.format("_%03d", mistate.current)
 	
 	-- Fading in..
 	if mistate.state == CAIRO_STATE.SO_STATES.INITIAL then
 		self:ButtonImage(nameid, image_list[mistate.current], mistate.xpos, y, cb)
-		if mistate.tween == nil then 
-			mistate.tween = tween( tdelay, mistate, { xpos=x }, 'inCubic', TweenDone, self.multiImageStates, name )
+		if mistate.tween == nil then
+            local imagex = timage.width * timage.scalex
+            local targetx = (x + swidth * 0.5) - imagex * 0.5
+			mistate.tween = tween( tdelay, mistate, { xpos=targetx }, 'inCubic', TweenDone, self.multiImageStates, name )
 			mistate.state=CAIRO_STATE.SO_STATES.MOVING_OUT
-		end
-	end
+        end
+
 	-- Fading in..
-	if mistate.state == CAIRO_STATE.SO_STATES.MOVING_OUT then
+	elseif mistate.state == CAIRO_STATE.SO_STATES.MOVING_OUT then
 		self:ButtonImage(nameid, image_list[mistate.current], mistate.xpos, y, cb)
 		if mistate.tween == nil then 
-			mistate.tween = tween( sspeed, mistate, { xpos=x+timage.width * timage.scalex }, 'inCubic', TweenDone, self.multiImageStates, name )
+			mistate.tween = tween( sspeed, mistate, { xpos=x+swidth }, 'inCubic', TweenDone, self.multiImageStates, name )
 			mistate.state=CAIRO_STATE.SO_STATES.OUT
 		end
-	end
+
 	-- Fading out..
-	if mistate.state == CAIRO_STATE.SO_STATES.OUT then
+	elseif mistate.state == CAIRO_STATE.SO_STATES.OUT then
 		self:ButtonImage(nameid, image_list[mistate.current], mistate.xpos, y, cb)
-		if mistate.tween == nil then 
+		if mistate.tween == nil then
+            mistate.current = mistate.current + 1
+            if mistate.current > icount then mistate.current = 1 end
+            local timage = image_list[mistate.current]
+
+            local imagex = timage.width * timage.scalex
+            local targetx = (x + swidth * 0.5) - imagex * 0.5
 			mistate.xpos = x-timage.width * timage.scalex
-			mistate.tween = tween( sspeed, mistate, { xpos=x }, 'inCubic', TweenDone, self.multiImageStates, name )
+			mistate.tween = tween( sspeed, mistate, { xpos=targetx }, 'inCubic', TweenDone, self.multiImageStates, name )
 			mistate.state=CAIRO_STATE.SO_STATES.INITIAL
-			mistate.current = mistate.current + 1
-			if mistate.current > icount then mistate.current = 1 end
 		end
 	end
 	self:ClipReset()
@@ -229,8 +237,7 @@ function widgets:List(name, left, top, width, height)
 	end
 	
 	local newListBox = { 
-		otype = CAIRO_TYPE.LISTBOX, name=name, top=top, left=left, width=width, height=height, 
-					nodes = {}
+		otype = CAIRO_TYPE.LISTBOX, name=name, top=top, left=left, width=width, height=height, nodes = {}
 	}
 		
 	self:AddObject(newListBox, CAIRO_TYPE.LISTBOX)
@@ -257,18 +264,16 @@ function TextBoxHandler( object, cairo )
 
             if v.scancode == sdl.SDL_SCANCODE_RETURN or v.scancode == sdl.SDL_SCANCODE_GRAVE then
                 modified = 1
-            end
 
-			if v.scancode == sdl.SDL_SCANCODE_RIGHT then
+			elseif v.scancode == sdl.SDL_SCANCODE_RIGHT then
 				if cstate.pos < dlen-1 then cstate.pos = cstate.pos+1 end
                 modified = 1
-			end
-			if v.scancode == sdl.SDL_SCANCODE_LEFT then
+
+			elseif v.scancode == sdl.SDL_SCANCODE_LEFT then
 				if cstate.pos > 0 then cstate.pos = cstate.pos-1 end
                 modified = 1
-			end
-			
-			if v.scancode == sdl.SDL_SCANCODE_DELETE then
+
+			elseif v.scancode == sdl.SDL_SCANCODE_DELETE then
 				if cstate.pos < dlen then
 					local left 	= string.sub(tdata, 1, cstate.pos)
 					local right = string.sub(tdata, cstate.pos+2, dlen)
@@ -276,9 +281,8 @@ function TextBoxHandler( object, cairo )
 					tdata = left..right
                 end
                 modified = 1
-			end
-			
-			if v.scancode == sdl.SDL_SCANCODE_BACKSPACE then
+
+			elseif v.scancode == sdl.SDL_SCANCODE_BACKSPACE then
 				if cstate.pos > 0 and cstate.pos <= dlen then
 					local left = string.sub(tdata, 1, cstate.pos-1)
 					local right = string.sub(tdata, cstate.pos+1)
@@ -286,13 +290,11 @@ function TextBoxHandler( object, cairo )
 					tdata = left..right
                 end
                 modified = 1
-			end
 
-            if v.mod == sdl.KMOD_RSHIFT or v.mod == sdl.KMOD_LSHIFT then
+            elseif v.mod == sdl.KMOD_RSHIFT or v.mod == sdl.KMOD_LSHIFT then
                 shifted = 1
-            end
 
-			if v.scancode > 0 and v.scancode < sdl.SDL_SCANCODE_CAPSLOCK and modified == 0 then
+			elseif v.scancode > 0 and v.scancode < sdl.SDL_SCANCODE_CAPSLOCK and modified == 0 then
 
 				local char1 = string.char(v.sym)
 				if shifted == 1 then
@@ -377,9 +379,8 @@ function widgets:RenderLine(line, left, top)
 			local state = self:GetListState(v.list)
 			self:RenderList(state, v.cobject, tleft, top )
 			tleft = tleft + v.list.width
-		end
 
-		if v.ntype == CAIRO_TYPE.TEXT then
+		elseif v.ntype == CAIRO_TYPE.TEXT then
 			tcolor = {r=1, g=1, b=1, a=1}
 			local textsz = self:GetTextSize(v.name, v.size)
 			if(v.callback) then 
@@ -388,16 +389,14 @@ function widgets:RenderLine(line, left, top)
 			end
 			self:RenderText(v.name, tleft, top + v.size * 0.85, v.size, tcolor )
 			tleft = tleft + textsz
-		end
-		
-		if v.ntype == CAIRO_TYPE.BUTTON then
+
+        elseif v.ntype == CAIRO_TYPE.BUTTON then
 			if v.width == nil then v.width = self:GetTextSize(v.name, v.size) end
 			local button = self:Button(v.name, tleft, top, v.width, v.size, v.corner, v.border, v.callback, v.meta)
 			self:RenderButton(button, 0.0)
 			tleft = tleft + v.width
-		end
 
-		if v.ntype == CAIRO_TYPE.IMAGE then
+        elseif v.ntype == CAIRO_TYPE.IMAGE then
 			v.image.scalex = v.size / v.image.width
 			v.image.scaley = v.size / v.image.height
 			if(v.callback) then 
@@ -406,9 +405,8 @@ function widgets:RenderLine(line, left, top)
 			end
 			self:RenderImage(v.image, tleft, top, 0.0, v.callback)
 			tleft = tleft + v.image.width * v.image.scalex
-		end
-		
-		if v.ntype == CAIRO_TYPE.EXPLODER then
+
+        elseif v.ntype == CAIRO_TYPE.EXPLODER then
 
 			v.image.scalex = v.size / v.image.width
 			v.image.scaley = v.size / v.image.height
@@ -449,12 +447,55 @@ function widgets:GetListSize(list)
 end
 
 ------------------------------------------------------------------------------------------------------------
+-- List Utility functions
+
+function widgets:ListAddSpace( tbl, textsize )
+    local linedata = { name = "space", size = textsize }
+    table.insert( tbl, linedata )
+end
+
+------------------------------------------------------------------------------------------------------------
+
+function widgets:ListAddText( tbl, text, textsize, callback, meta )
+    local linedata = { ntype = CAIRO_TYPE.TEXT, name = text, size = textsize, callback = callback, meta = meta }
+    table.insert( tbl, linedata )
+end
+
+------------------------------------------------------------------------------------------------------------
+
+function widgets:ListAddImage( tbl, name, image, textsize, colour, callback, meta )
+    local linedata = { ntype = CAIRO_TYPE.IMAGE, name = name, image = image, size = textsize, color = colour, callback = callback, meta = meta }
+    table.insert( tbl, linedata )
+end
+
+------------------------------------------------------------------------------------------------------------
+
+function widgets:ListAddButton( tbl, name, image, textsize, colour, callback, meta )
+    local linedata = { ntype = CAIRO_TYPE.BUTTON, name = name, image = image, size = textsize, color = colour, callback = callback, meta = meta }
+    table.insert( tbl, linedata )
+end
+
+------------------------------------------------------------------------------------------------------------
+
+function widgets:ListAddExploder( tbl, name, image, width, height, list )
+    local linedata = { ntype = CAIRO_TYPE.EXPLODER, name = name, width = width, height = height, list = list }
+    table.insert( tbl, linedata )
+end
+
+------------------------------------------------------------------------------------------------------------
+
+function widgets:ListAddLine( tbl, hline, name, size  )
+    local linedata = { ntype = CAIRO_TYPE.HLINE, name = name, size = size, nodes = hline }
+    table.insert( tbl, linedata )
+end
+
+------------------------------------------------------------------------------------------------------------
 
 function widgets:GetListState(list)
 
 	local state = {}
 	if(self.listStates[list.name] == nil) then 
-		state = { state=CAIRO_STATE.SO_STATES.INITIAL, move=0, scroll=0, target=1.0 }
+		state = { state=CAIRO_STATE.SO_STATES.INITIAL, move=0, scroll=0, target=1.0, selected=0 }
 		self.listStates[list.name] = state
 	else
 		state = self.listStates[list.name]
@@ -462,7 +503,6 @@ function widgets:GetListState(list)
 	
 	return state
 end
-
 
 ------------------------------------------------------------------------------------------------------------
 
@@ -502,14 +542,12 @@ function widgets:RenderList(state, list, left, top, select)
 				local button = self:Button(v.name, left, ttop, textsz, v.size, v.corner, v.border, v.callback)
 			end
 			self:RenderText(v.name, left, ttop + v.size * 0.85, v.size, tcolor )
-		end
-		
-		if v.ntype == CAIRO_TYPE.BUTTON then
+
+		elseif v.ntype == CAIRO_TYPE.BUTTON then
 			local button = self:Button(v.name, left, ttop, list.width, v.size, v.corner, v.border, v.callback)
 			self:RenderButton(button, 0.0)
-		end
 
-		if v.ntype == CAIRO_TYPE.IMAGE then
+		elseif v.ntype == CAIRO_TYPE.IMAGE then
 			v.image.scalex = v.size / v.image.width
 			local halfx = 0.5 * v.image.width * v.image.scalex  
 			v.image.scaley = v.size / v.image.height
@@ -518,14 +556,12 @@ function widgets:RenderList(state, list, left, top, select)
 				local button = self:Button(v.name, left, ttop, v.image.width * v.image.scalex, v.size, v.corner, v.border, v.callback)
 			end
 			self:RenderImage(v.image, left + halfx, ttop + halfy, 0.0, v.callback)
-		end
-		
-		if v.ntype == CAIRO_TYPE.EXPLODER then
+
+		elseif v.ntype == CAIRO_TYPE.EXPLODER then
 		
 			widgets:Exploder(v.name, v.image, left, ttop, v.width, v.height, v.corner, v.list)
-		end
-		
-		if v.ntype == CAIRO_TYPE.HLINE then
+
+		elseif v.ntype == CAIRO_TYPE.HLINE then
 			lsize = self:RenderLine(v, left, ttop)
 		end
 
@@ -665,23 +701,31 @@ function widgets:Exploder(name, image, align, x, y, hsize, vsize, corner, list)
 	local button 	= nil
 
     local aleft     = 0
-    local atop      = 0
-    if(align == CAIRO_UI.RIGHT) then aleft = hsize; atop = 0.0; end
-    if(align == CAIRO_UI.BOTTOM) then aleft = 0.0; atop = vsize; end
+    local atop      = 10
+    local adir      = 0
+    local aoff      = 10
+    if(list.arrows == nil) then aoff = 0 end
+
+    local tpos      = { 10, -10 }
+    if(align == CAIRO_UI.RIGHT) then aleft = hsize + aoff; atop = 0.0; adir = 90; tpos = { -10, 10 } end
+    if(align == CAIRO_UI.BOTTOM) then aleft = 0.0; atop = vsize + aoff; end
+    if(list.arrows == nil) then tpos = nil end
 
 	-- Draw the list
 	if(state.move > 0.1) then
 
 		cr.cairo_save(self.ctx)
 		cr.cairo_translate(self.ctx, left + aleft, top + atop)
-		cr.cairo_scale(self.ctx, state.move, state.move)	
+        if tpos then self:DrawTriangle( tpos, adir, 8, 16 ) end
+		cr.cairo_scale(self.ctx, state.move, state.move)
 		cr.cairo_translate(self.ctx, -left-aleft, -top - atop)
-		
+
 		self:RenderList(state, list, left+aleft, top + atop)
 		cr.cairo_restore(self.ctx)
-	end	
+	end
 
-	if(image) then
+
+    if(image) then
 		button = image
 		button.left = x; button.top = y
 		button.scalex = hsize / image.width; button.scaley = vsize / image.height
@@ -755,6 +799,7 @@ end
 ------------------------------------------------------------------------------------------------------------
 
 local function CairoChangeFolder(callerobj, wcairo)
+
 --print("*************", callerobj.name, wcairo.file_FileSelect)
 	wcairo.file_NewFolder = callerobj.name
 end

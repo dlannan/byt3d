@@ -50,7 +50,7 @@ function PEditorMain:Begin()
 
     -- Add all the icons here that we will use.
     self.icons = {}
-    self.icons["generic"] = Gcairo:LoadImage("icon1", "byt3d/data/icons/generic_64.png")
+    self.icons["generic"] = Gcairo:LoadImage("icon_generic", "byt3d/data/icons/generic_64.png")
     self.icons["main"]  = Gcairo:LoadImage("main", "byt3d/data/icons/generic_64.png")
     self.icons["assets"]  = Gcairo:LoadImage("assets", "byt3d/data/icons/generic_obj_folder_64.png")
     self.icons["nodes"]  = Gcairo:LoadImage("nodes", "byt3d/data/icons/generic_obj_list_64.png")

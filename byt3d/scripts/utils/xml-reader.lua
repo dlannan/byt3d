@@ -59,7 +59,7 @@ function collect( s, label )
 
         -- Start of new element
 		elseif c == "" then -- start tag
-			top = {label=label, xarg=parseargs(xarg)}
+			top = {label=label, xarg=parseargs(xarg) }
 			table.insert(stack, top) -- new level
 
         -- Must be an end element tag
@@ -73,7 +73,8 @@ function collect( s, label )
             if toclose.label ~= label then
             	error("trying to close "..tostring(toclose.label).." with "..label)
             end
-            --table.insert(top, toclose)
+
+            -- table.insert(top, toclose)
             local argt = toclose.xarg
             if argt and #argt < 2 then
                 if argt.type == "number" then
@@ -173,6 +174,8 @@ function writeEntry(file, properties, parent, depth)
                     fname = string.gsub(fname, "%.", "_")
 
                     local binfilename = bpath.."\\"..fname.."_"..parent.."_"..tostring(k)..".bin"
+                    -- convert to local file type
+                    binfilename = dir:osfile(binfilename)
                     local bsize = arraysize * elementsize
 
                     local res = byt3dio:savedata(binfilename, bsize, v )

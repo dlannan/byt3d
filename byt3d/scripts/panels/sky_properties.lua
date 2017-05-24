@@ -30,6 +30,7 @@ end
 function CreateSkyObject()
 
 	local level = gLevels["Default"].level
+
 	local cam_far = byt3dRender.currentCamera.farPlane * 0.95  -- May need to tinker with this
 	local newmodel = byt3dModel:New()
 	
@@ -39,8 +40,8 @@ function CreateSkyObject()
 		local newtex = byt3dTexture:New()
 		newtex:NewColorImage( {64, 64, 255, 255} )
 		newmodel:GenerateSphere(cam_far, 10)
-		newmodel:SetPriority(1)
-		newmodel:SetShader(newshader)
+		newmodel:SetMeshProperty("priority", 1)
+		newmodel:SetMeshProperty("shader", newshader)
 		newmodel:SetSamplerTex(newtex, "s_tex0")
 		
 	end 
@@ -50,8 +51,8 @@ function CreateSkyObject()
 		local newtex = byt3dTexture:New()
 		newtex:FromCairoImage(Gcairo, "sky1", "byt3d/data/bg/skyboxsun25degtest.png")
 		newmodel:GenerateSphere(cam_far, 10)
-		newmodel:SetPriority(1)
-		newmodel:SetShader(newshader)
+        newmodel:SetMeshProperty("priority", 1)
+        newmodel:SetMeshProperty("shader", newshader)
 		newmodel:SetSamplerTex(newtex, "s_tex0")
 	end
 	
@@ -60,8 +61,8 @@ function CreateSkyObject()
 		local newtex = byt3dTexture:New()
 		newtex:FromCairoImage(Gcairo, "sky1", "byt3d/data/bg/skyboxsun25degtest.png")
 		newmodel:GenerateCube(cam_far * 0.6, 10)
-		newmodel:SetPriority(1)		
-		newmodel:SetShader(newshader)
+        newmodel:SetMeshProperty("priority", 1)
+        newmodel:SetMeshProperty("shader", newshader)
 		newmodel:SetSamplerTex(newtex, "s_tex0")
 	end
 	

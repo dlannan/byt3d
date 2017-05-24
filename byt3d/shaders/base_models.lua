@@ -8,9 +8,10 @@ colour_shader_vert = [[
 	uniform mat4 	viewProjMatrix; 
 	uniform mat4 	modelMatrix;	
 	varying vec2 	v_texCoord0;
+//	varying float       f_depth;
 	void main()
 	{
-		gl_Position = (viewProjMatrix * modelMatrix) * vec4(vPosition, 1.0);
+		gl_Position = viewProjMatrix  * modelMatrix * vec4(vPosition, 1.0);
 	    v_texCoord0 = vTexCoord;
 	}
 ]]
@@ -21,10 +22,13 @@ colour_shader_frag = [[
 	precision highp float;
 	uniform sampler2D 	s_tex0;
 	varying vec2 		v_texCoord0;
+	varying float       f_depth;
+
 	void main()
 	{
 		vec4 texel = texture2D(s_tex0, v_texCoord0);
 		gl_FragColor = vec4(texel.b, texel.g, texel.r, texel.a);
+		//gl_FragColor = vec4(f_depth, f_depth, f_depth, 1.0);
 	}
 ]]
 

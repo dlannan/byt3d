@@ -1,0 +1,2 @@
+How to convert Cg to GLSL using NVidias Shader.
+cgc -profile glslv vert.cg

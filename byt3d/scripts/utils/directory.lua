@@ -5,17 +5,37 @@
 -- */
 ----------------------------------------------------------------
 
-local apr 	= require("ffi/apr")
-
+----------------------------------------------------------------
+local dir	= {  init = 0, debug = false }
 ----------------------------------------------------------------
 
-local dir	= {  init = 0, debug = false }
+if ffi.os == "OSX" then
+    dir.folder_sep = "/"
+end
+
+if ffi.os == "Windows" then
+    dir.folder_sep = "\\"
+end
 
 ----------------------------------------------------------------
 
 function dir:Init()
 
-    assert( apr.apr_initialize() == 0 )
+end
+
+----------------------------------------------------------------
+
+function dir:osfile(filename)
+
+    local newfile = filename
+    if ffi.os == "OSX" then
+        newfile = string.gsub(filename, "\\", "/")
+    end
+    if ffi.os == "Windows" then
+        newfile = string.gsub(filename, "/", "\\")
+    end
+
+    return newfile
 end
 
 ----------------------------------------------------------------
@@ -67,44 +87,47 @@ function dir:listfolder(dirpath, res, dir_expand, callback)
 
 	-- folder list results - should always have "." and ".." in the list ?!
 	if res == nil then res 	= {} end
-
-	local pool = ffi.new( "apr_pool_t*[1]" )
-	assert( apr.apr_pool_create_ex( pool, nil, nil, nil ) == 0 )
-
-	local dirt = ffi.new( "apr_dir_t*[1]" )
-	assert( apr.apr_dir_open(dirt, dirpath, pool[0]) == 0 )
-	
     if callback then callback() end
-    local finfo = ffi.new( "apr_finfo_t" )
-	while apr.apr_dir_read(finfo, apr.APR_FINFO_DIRENT, dirt[0]) == 0 do
-	   local info = finfo
-	   local name = ffi.string( info.name )
-	   -- print( name, tonumber( info.size ), info.filetype )
-	   local entry = { name = name, path = dirpath, size = info.size, ftype = info.filetype, ctime = info.ctime, mtime = info.mtime }
-	   table.insert(res, entry)
+    local tfile = nil
 
-       -- Expand into the folder and collect all files
-       if dir_expand ~= nil and info.filetype == apr.APR_DIR then
-           if name ~= "." and name ~= ".." then
-            local folderlist = dirpath.."/"..name
-            self:listfolder(folderlist, res, dir_expand)
-           end
-       end
+	for tfile in lfs.dir(dirpath) do
 
-	   -- Below is used for debugging.
-	   ----------------------------------------------------------------------------------------------------
-	   if self.debug then
-	      local fields = { "pool", "valid", "protection", "filetype", "user", "group", "inode", "device",
-			       "nlink", "size", "csize", "atime", "mtime", "ctime", "fname", "name", "filehand" }
-	      for k, field in ipairs(fields) do
-		 	local v = finfo[0][field]
-		 	print( k, field, tostring(v) )
-	      end
-	   end
-	   ----------------------------------------------------------------------------------------------------
-	end
-	
+        local f = dirpath..'/'..tfile
+        local attr = lfs.attributes(f)
+
+        local name = self:getfilename(f)
+        local entry = { name = name, path = dirpath, size = attr.size, ftype = attr.mode, ctime = attr.change, mtime = attr.modification  }
+	    table.insert(res, entry)
+
+        -- Expand into the folder and collect all files
+        if dir_expand ~= nil and attr.mode == "directory" then
+            if name ~= "." and name ~= ".." then
+                local folderlist = dirpath.."/"..name
+                self:listfolder(folderlist, res, dir_expand)
+            end
+        end
+
+	    -- Below is used for debugging.
+	    ----------------------------------------------------------------------------------------------------
+	    if self.debug then
+	        local fields = { "name", "path", "size", "ftype", "mtime", "ctime" }
+	        for k, field in ipairs(fields) do
+		 	    local v = entry[field]
+		 	    print( k, field, tostring(v) )
+	        end
+	    end
+    end
+
 	return res
+end
+
+----------------------------------------------------------------
+
+function dir:fileinfo(filename)
+
+    local attr = lfs.attributes(filename)
+    local entry = { name = self:getfilename(filename), path = self:getfilepath(filename), size = attr.size, ftype = attr.mode, ctime = attr.change, mtime = attr.modification  }
+    return entry
 end
 
 ----------------------------------------------------------------
@@ -112,7 +135,6 @@ end
 function dir:Finalize()
 
     print("Closing directory system.")
-    apr.apr_terminate()
 end
 ----------------------------------------------------------------
 

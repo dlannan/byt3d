@@ -2,7 +2,8 @@
 local ffi = require( "ffi" )
 
 local libs = ffi_assimp_libs or {
-   Windows = { x86 = "bin/Windows/x86/Assimp32.dll", x64 = "bin/Windows/x64/Assimp64.dll" },
+   Windows  = { x86 = "bin/Windows/x86/Assimp32.dll", x64 = "bin/Windows/x64/Assimp64.dll" },
+   OSX      = { x86 = "bin/OSX/Assimp32.dylib", x64 = "bin/OSX/libassimp.dylib" },
 }
 
 local lib   = ffi_assimp_libs or libs[ ffi.os ][ ffi.arch ]
@@ -156,7 +157,7 @@ typedef enum aiPostProcessSteps {
   aiProcess_OptimizeMeshes = 0x200000,
   aiProcess_OptimizeGraph = 0x400000,
   aiProcess_FlipUVs = 0x800000,
-  aiProcess_FlipWindingOrder = 0x1000000,
+  aiProcess_FlipWindingOrder = 0x1000000
 } aiPostProcessSteps;
 typedef unsigned int uint;
 typedef char byte;

@@ -11,16 +11,45 @@ local CamEditor =
 {
     omx     = 0.0,
     omy     = 0.0,
-    campos  = { 0.0, 0.0, 0.0 }        -- Current camera position
+    selected = nil
 }
+
+------------------------------------------------------------------------------------------------------------
+
+-- Indicate if the current camera settings should be copied to the next (useful for FreeCamera)
+local COPY_CAMERA       = 1
+local LEAVE_CAMERA      = nil
 
 ------------------------------------------------------------------------------------------------------------
 
 function ChangeCamera(callerobj)
 
     local level = gLevels["Default"].level
-    level:ChangeCamera(callerobj.name)
+    local camera_update = LEAVE_CAMERA
+    if callerobj.name == "FreeCamera" then camera_update = COPY_CAMERA end
+
+    level:ChangeCamera(callerobj.name, camera_update)
+    callerobj.meta.this.selected = level.cameras[level.currentCamera]
     Gcairo.exploderStates[" Cameras"].state = 4
+end
+
+------------------------------------------------------------------------------------------------------------
+
+function CamEditor:Begin(level, w, h)
+
+    level.cameras["Default"]:SetupView(0.0, 0.0, w, h)
+    level.cameras["Default"]:LookAt( { 13, 2, 13 }, { 0.0, 0.0, 0.0 } )
+
+    level.cameras["FreeCamera"]:SetupView(0.0, 0.0, w, h)
+
+    -- Add handlers here
+    level.cameras["FreeCamera"].handler = self.CameraFreeController
+
+    -- Keystate is instantaneous - more useful for free camera
+    self.keystate = nil
+
+    level.cameras["sun"] = byt3dRender.lights["sun"]
+    level.cameras["sun"].handler = self.CameraFreeController
 end
 
 ------------------------------------------------------------------------------------------------------------
@@ -40,9 +69,9 @@ function CamEditor:CameraList(level)
             { name="space1", size=4 },
             { name="test2", ntype=CAIRO_TYPE.IMAGE, image=level.icons.select, size=14, color=tcolor },
             { name="space1", size=4 },
-            { name=k, ntype=CAIRO_TYPE.TEXT, size=14, callback=ChangeCamera }
+            { name=k, ntype=CAIRO_TYPE.TEXT, size=14, callback=ChangeCamera, meta = { this=self } }
         }
-        if byt3dRender.currentCamera ~= v then nline2[2] = { name="space1", size=14 } end
+        if level.currentCamera ~= k then nline2[2] = { name="space1", size=14 } end
         local nline2ref = { name="line2", ntype=CAIRO_TYPE.HLINE, size=14, nodes = nline2 }
         table.insert(nodes, nline1)
         table.insert(nodes, nline2ref )
@@ -51,38 +80,40 @@ function CamEditor:CameraList(level)
     --	nodes[11] = { name="space2", size=10 }
     --	nodes[12] = { name="Another Line", ntype=CAIRO_TYPE.TEXT, size=10 }
     content.nodes = nodes
+    content.arrows = 1
     Gcairo.style.button_color = CAIRO_STYLE.METRO.SEAGREEN
 
     -- Render a slideOut object on left side of screen
     -- Gcairo:SlideOut(" Cameras",  CAIRO_UI.LEFT, 140, 20, 0, content)
-    Gcairo:Exploder(" Cameras", level.icons.camera, CAIRO_UI.BOTTOM, 210, 3, 20, 20, 0, content)
+    Gcairo:Exploder(" Cameras", level.icons.camera, CAIRO_UI.BOTTOM, 220, 3, 20, 20, 0, content)
 end
 
 ------------------------------------------------------------------------------------------------------------
 
 function CamEditor:CameraFreeController(mxi, myi, buttons)
 
-    local cam = byt3dRender.currentCamera
+    local cam = self.selected
+    local dospeed = 0
 
-    if buttons[3] == true then
+    if buttons[1] == true then
+
+        self.keystate = sdl.SDL_GetKeyboardState(nil)
         -- Free Camera rotate
         cam.heading = cam.heading + (mxi - self.omx) * 0.5
         cam.pitch = cam.pitch + (myi - self.omy) * 0.5
 
-        local tbl = gSdisp.wm.KeyDown
-        for k, v in pairs(tbl) do
-            if v.scancode == sdl.SDL_SCANCODE_S then
-                cam.speed = -2.0
-            end
-            if v.scancode == sdl.SDL_SCANCODE_W then
-                cam.speed = 2.0
-            end
+        if self.keystate[sdl.SDL_SCANCODE_S] == 1 then
+            cam.speed = 20.0
+            dospeed = 1
         end
-        if #tbl == 0 then
-            cam.speed = cam.speed * 0.9
+        if self.keystate[sdl.SDL_SCANCODE_W] == 1 then
+            cam.speed = -20.0
+            dospeed = 1
         end
-    else
-        cam.speed = cam.speed * 0.9
+    end
+
+    if dospeed == 0 then
+        cam.speed = cam.speed * 0.75
     end
 
     self.omx = mxi
@@ -93,6 +124,8 @@ end
 
 function CamEditor:CameraUpdate()
 
+    local cam = self.selected
+
     -- No need to move, if there is no speed!
     if math.abs(byt3dRender.currentCamera.speed) > 0.5 then
 
@@ -102,12 +135,13 @@ function CamEditor:CameraUpdate()
         local dir = VecNormalize( vec )
 
         -- Apply Speed
-        byt3dRender.currentCamera.eye[1] = byt3dRender.currentCamera.eye[1] + dir[1] * byt3dRender.currentCamera.speed
-        byt3dRender.currentCamera.eye[2] = byt3dRender.currentCamera.eye[2] + dir[2] * byt3dRender.currentCamera.speed
-        byt3dRender.currentCamera.eye[3] = byt3dRender.currentCamera.eye[3] + dir[3] * byt3dRender.currentCamera.speed
+        cam.eye[1] = cam.eye[1] + dir[1] * cam.speed * WM_frameMs
+        cam.eye[2] = cam.eye[2] + dir[2] * cam.speed * WM_frameMs
+        cam.eye[3] = cam.eye[3] + dir[3] * cam.speed * WM_frameMs
     end
 
-    byt3dRender.currentCamera:UpdateFromEye()
+    cam:UpdateFromEye()
+    -- print(cam.eye[1], cam.eye[2], cam.eye[3])
 end
 
 ------------------------------------------------------------------------------------------------------------

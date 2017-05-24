@@ -1,10 +1,17 @@
 <byt3dProject type="table">
-	<projectInfo type="table">
-		<thumbnail type="string">byt3d/data/projects/thumbnails/tetris.png</thumbnail>
-		<genThumbnail type="number">1</genThumbnail>
-		<name type="string">tetris</name>
-		<datafolders type="table">
-			<1 type="string">byt3d/data</1>
-		</datafolders>
-	</projectInfo>
+    <name type="string">Tetris</name>
+    <projectInfo type="table">
+        <thumbnail type="string">byt3d/data/projects/thumbnails/a.png</thumbnail>
+        <filterMask type="number">65530</filterMask>
+        <occulusRift type="number">1</occulusRift>
+        <autoAssetConv type="number">1</autoAssetConv>
+        <genThumbnail type="number">1</genThumbnail>
+        <datafolders type="table">
+            <1 type="string">byt3d/data</1>
+            <2 type="string">byt3d/shared/scripts</2>
+            <3 type="string">byt3d/shaders</3>
+        </datafolders>
+        <name type="string">renderer3d</name>
+        <renderer3d type="number">0</renderer3d>
+    </projectInfo>
 </byt3dProject>

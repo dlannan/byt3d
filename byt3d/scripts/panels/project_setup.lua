@@ -238,7 +238,7 @@ function SProjectSetup:RenderConfigure(left, top, width, height)
 	Gcairo.style.button_color = { r=0.3, b=0.3, g=0.3, a=1 }
 	Gcairo:RenderBox(left, top, width, height, 0)
 	local icons = { self.icon_windows, self.icon_android, self.icon_blackberry, self.icon_ubuntu }
-	Gcairo:RenderMultiSlideImage("prj_configure", icons, 680, 170, 3.0, 1.5, ConfigPlatform)
+	Gcairo:RenderMultiSlideImage("prj_configure", icons, left, 180, width, 3.0, 1.5, nil)
 	local cfgbutton = Gcairo:Button( "cfg", left, top, width, height, 0, 0, ConfigPlatform)
 	
 	Gcairo:RenderText("Configure", 770, height, 20, tcolor )

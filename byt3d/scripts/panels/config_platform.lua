@@ -6,7 +6,7 @@
 --            
 
 ------------------------------------------------------------------------------------------------------------
-require("scripts/platform/windows")
+--if ffi.os == "Windows" then require("scripts/platform/windows") end
 
 local tween		= require("scripts/utils/tween")
 local folder    = require("scripts/panels/editor_folderselect")
@@ -39,14 +39,19 @@ end
 function SconfigPlatform:Begin()	
 
 	self.image1 		= Gcairo:LoadImage("icon1_next", "byt3d/data/icons/generic_64.png", 1)
+    self.image1.scalex = 0.6; self.image1.scaley = 0.6;
 	self.image2 		= Gcairo:LoadImage("icon2", "byt3d/data/icons/generic_obj_close_64.png")
     self.image3 		= Gcairo:LoadImage("icon3", "byt3d/data/icons/generic_obj_add_64.png")
     self.image4 		= Gcairo:LoadImage("icon4", "byt3d/data/icons/generic_obj_tick_64.png")
 
 	self.icon_windows 	= Gcairo:LoadImage("icon_windows", "byt3d/data/icons/small/config_windows.png", 1)
+    self.icon_windows.scalex = 0.6; self.icon_windows.scaley = 0.6;
 	self.icon_android 	= Gcairo:LoadImage("icon_android", "byt3d/data/icons/small/config_android.png", 1)
+    self.icon_android.scalex = 0.6; self.icon_android.scaley = 0.6;
 	self.icon_blackberry= Gcairo:LoadImage("icon_bb", "byt3d/data/icons/small/config_blackberry.png", 1)
+    self.icon_blackberry.scalex = 0.6; self.icon_blackberry.scaley = 0.6;
 	self.icon_ubuntu 	= Gcairo:LoadImage("icon_bb", "byt3d/data/icons/small/config_ubuntu.png", 1)
+    self.icon_ubuntu.scalex = 0.6; self.icon_ubuntu.scaley = 0.6;
 
     assetPath = ""
     sm:CreateState("FolderSelect",		folder)
@@ -90,23 +95,27 @@ function SconfigPlatform:Update(mxi, myi, buttons)
 	Gcairo:RenderBox(0, 0, self.width, self.height, 0)
 	Gcairo.style.button_color = { r=0.1, b=0.1, g=0.4, a=1 }
 	Gcairo:RenderBox(120, 120, 770, 310, 0)
-	Gcairo.style.button_color = saved
+
+    Gcairo.style.button_color = { r=1, g=1, b=1, a=1 }
+    Gcairo:RenderBox(120, 185, 770, 1, 0)
+
+    Gcairo.style.button_color = saved
 	
 	local left = 600
 	local top  = 130
 	
-	Gcairo:ButtonImage("icon_win", self.icon_windows, left, top, WinConfig )	
-	Gcairo:ButtonImage("icon_android", self.icon_android, left + 70 * 1, top, WinConfig )	
-	Gcairo:ButtonImage("icon_blackberry", self.icon_blackberry, left + 70 * 2, top, WinConfig )	
-	Gcairo:ButtonImage("icon_ubuntu", self.icon_ubuntu, left + 70 * 3, top, WinConfig )	
+	Gcairo:ButtonImage("icon_win", self.icon_windows, left + 70, top, WinConfig )
+	Gcairo:ButtonImage("icon_android", self.icon_android, left + 70 + 50 * 1, top, WinConfig )
+	Gcairo:ButtonImage("icon_blackberry", self.icon_blackberry, left + 70 + 50 * 2, top, WinConfig )
+	Gcairo:ButtonImage("icon_ubuntu", self.icon_ubuntu, left + 70 + 50 * 3, top, WinConfig )
 	
-	Gcairo:RenderText(self.current, left + 20, top - 20, 22, tcolor )
+	Gcairo:RenderText(self.current, left + 160, top - 20, 22, tcolor )
 
     Gcairo:RenderText(projectName, left - 440, top + 40, 30, tcolor )
     Gcairo:RenderText("3D Renderer", left - 400, 240, 20, tcolor )
     Gcairo:RenderText("Generate Thumbnail", left - 400, 270, 20, tcolor )
     Gcairo:RenderText("Auto Asset Convert", left - 400, 300, 20, tcolor )
-    Gcairo:RenderText("Occulus Rift Support", left - 400, 400, 20, tcolor )
+    Gcairo:RenderText("Occulus Rift Support", left - 400, 380, 20, tcolor )
 
     Gcairo.style.button_color = { r=0.0, g=0.0, b=0.0, a=1 }
     local tbox = Gcairo:TextBox("assetPath", left - 140, 225, 320, 20, assetPath, tcolor)
@@ -147,7 +156,7 @@ function SconfigPlatform:Update(mxi, myi, buttons)
     local occulus_support = gCurrProjectInfo.byt3dProject.projectInfo.occulusRift
     if occulus_support == nil then occulus_support = 0 end
     if occulus_support == 1 then drawicon4 = self.image4 end
-    local hit4 = Gcairo:RenderImage(drawicon4, left-440, 380, 0.0, 1)
+    local hit4 = Gcairo:RenderImage(drawicon4, left-440, 360, 0.0, 1)
     if self.last_buttons[1] == true and buttons[1] == false and hit4 == true then
         gCurrProjectInfo.byt3dProject.projectInfo.occulusRift = 1-occulus_support
     end

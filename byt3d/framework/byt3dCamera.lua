@@ -48,7 +48,7 @@ byt3dCamera =
 --~         /// <summary>
 --~         /// vfov = Vertical field of view in degrees
 --~         /// </summary>
-    vfov        = 20.0,
+    vfov        = 33.0,
 --~         /// <summary>
 --~         /// aspect ratio of the vfov anf hfov
 --~         /// </summary>
@@ -71,7 +71,7 @@ byt3dCamera =
     -- Some sensible variables
     pitch       = 0.0,
     heading     = 0.0,
-    eye         = { 0.0, 0.0, 0.0, },
+    eye         = { 0.0, 0.0, 0.0 },
     speed       = 0.0
 }
 
@@ -111,7 +111,6 @@ function byt3dCamera:SetupView(px, py, width, height)
 	self.dispWidth 		= width
 	self.dispHeight 	= height
 --~             // Set the viewport
-    gl.glViewport(self.dispX, self.dispY, self.dispWidth, self.dispHeight)
 end
 
 ------------------------------------------------------------------------------------------------------------
@@ -161,9 +160,11 @@ function byt3dCamera:BeginFrame(clear)
     if clear == nil then clear = true end
 --~             // Clear the color buffer
     if (clear == true) then
---        gl.glClear( bit.bor(gl.GL_COLOR_BUFFER_BIT, gl.GL_DEPTH_BUFFER_BIT) )
+        gl.glClear( bit.bor(gl.GL_COLOR_BUFFER_BIT, gl.GL_DEPTH_BUFFER_BIT) )
 --        gl.glClear(gl.GL_DEPTH_BUFFER_BIT)
     end
+
+    gl.glViewport(self.dispX, self.dispY, self.dispWidth, self.dispHeight)
 end
 
 ------------------------------------------------------------------------------------------------------------
@@ -182,8 +183,9 @@ function byt3dCamera:ShaderViewProjectionMatrix()
 	--print("Projection up:", tproj[4], tproj[5], tproj[6], tproj[7])
 	--print("Projection view:", tproj[8], tproj[9], tproj[10], tproj[11])
 	--print("Projection pos:", tproj[12], tproj[13], tproj[14], tproj[15])
+
     -- Load the matrix in - only if we have a Shader running!!!
-    gl.glUniformMatrix4fv(byt3dRender.currentShader.viewProjMatrix, 1, gl.GL_FALSE, tproj)
+    byt3dRender.currentShader:SetProjectionMatrix(tproj)
 end
 
 ------------------------------------------------------------------------------------------------------------
@@ -210,9 +212,8 @@ function byt3dCamera:CenterOnModel( model)
     self.zAway = -zForWidth
     if (zForHeight > zForWidth) then self.zAway = -zForHeight end
 
-    self.node.transform:Identity()
-    self.node.transform:Position(0.0, self.mHeight, self.zAway * 2.0)    
-    self.node.transform:LookAt( model.node.transform.m[13], model.node.transform.m[14], model.node.transform.m[15] )    
+    local pos = { 0.0, self.mHeight, self.zAway * 1.5 }
+    self:LookAt( pos, model.node.transform:pos() )
 end
 
 ------------------------------------------------------------------------------------------------------------
@@ -220,10 +221,11 @@ end
 --~         /// Look at a specific point in the world
 --~         /// </summary>
 --~         /// <param name="model">The target position to center the camera on.</param>
-function byt3dCamera:LookAt( eye, vec )
+function byt3dCamera:LookAt( eye, target )
 
     self.eye = { eye[1], eye[2], eye[3] }
-    self.heading, self.pitch = self.node.transform:LookAt( eye, vec )
+    self.target = { target[1], target[2], target[3] }
+    self.heading, self.pitch = self.node.transform:LookAt( eye, target )
 end
 
 ------------------------------------------------------------------------------------------------------------
@@ -233,8 +235,9 @@ end
 ------------------------------------------------------------------------------------------------------------
 
 function byt3dCamera:UpdateFromEye()
+
     self.node.transform:Identity()
-    self.node.transform:Translate( self.eye[1], self.eye[2], self.eye[3] )
+    self.node.transform:Translate( -self.eye[1], -self.eye[2], -self.eye[3] )
     self.node.transform:RotateHPR( self.heading, self.pitch, 0.0 )
 end
 

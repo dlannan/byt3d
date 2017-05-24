@@ -145,11 +145,12 @@ function byt3dIBuffer:FromMesh(newmesh, mesh)
         --if mat then
             local uv = mesh.mTextureCoords[0][orig_index]
             uvs[ucount] = uv.x;     ucount = ucount + 1
-            uvs[ucount] = 1.0-uv.y; ucount = ucount + 1		-- Dont really like this
+            uvs[ucount] = uv.y;     ucount = ucount + 1
         --end
 
         -- if at end of buffer then write it out
         if icheck == 60000 then
+
             local newbuff = byt3dIBuffer:New()
             newbuff.indexBuffer 	= ffi.new("unsigned short["..(icheck).."]", icollect)
 

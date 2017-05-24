@@ -17,7 +17,8 @@
 
 ------------------------------------------------------------------------------------------------------------
 
-local dir = require("byt3d/scripts/utils/directory")
+local dir       = require("byt3d/scripts/utils/directory")
+local fileio    = require("byt3d/scripts/utils/fileio")
 require("byt3d/scripts/states/editor/asset_filters")
 
 ------------------------------------------------------------------------------------------------------------
@@ -53,7 +54,6 @@ PEditorAssetList.FilterMap = {
     svg =       PEditorAssetList.SVG_FILTER
 }
 
-
 ------------------------------------------------------------------------------------------------------------
 
 PEditorAssetList.started   = ASSET_LIST_INACTIVE
@@ -75,7 +75,6 @@ function AssetListToggle(callerobj)
     filter_mask = bit.band(filter_mask, clearmask) + toggle
 
     callerobj.meta.this.filterMask = filter_mask
-
     -- print("AssetMask: ", bit.tohex(filter_mask), bit.tohex(toggle))
 end
 
@@ -130,19 +129,19 @@ function PEditorAssetList:Begin()
     -- Both the cache update button _and_ the cache 'updating' indicator. If its not spinning, it can
     -- be pressed and restart the cache.
     self.img_refresh = Gcairo:LoadImage("icon_refresh", "byt3d/data/icons/generic_obj_refresh_64.png")
-    self.img_refresh.scalex = 0.4; self.img_refresh.scaley = 0.4
+    self.img_refresh.scalex = 0.3; self.img_refresh.scaley = 0.3
 
     self.img_close = Gcairo:LoadImage("icon_close", "byt3d/data/icons/generic_64.png")
-    self.img_close.scalex = 0.4; self.img_close.scaley = 0.4
+    self.img_close.scalex = 0.3; self.img_close.scaley = 0.3
 
     self.img_f_lua = Gcairo:LoadImage("icon_f_lua", "byt3d/data/icons/generic_obj_doc_64.png")
-    self.img_f_lua.scalex = 0.4; self.img_f_lua.scaley = 0.4
+    self.img_f_lua.scalex = 0.3; self.img_f_lua.scaley = 0.3
     self.img_f_mesh = Gcairo:LoadImage("icon_f_lua", "byt3d/data/icons/generic_obj_mesh_64.png")
-    self.img_f_mesh.scalex = 0.4; self.img_f_mesh.scaley = 0.4
+    self.img_f_mesh.scalex = 0.3; self.img_f_mesh.scaley = 0.3
     self.img_f_tex = Gcairo:LoadImage("icon_f_lua", "byt3d/data/icons/generic_obj_image_64.png")
-    self.img_f_tex.scalex = 0.4; self.img_f_tex.scaley = 0.4
+    self.img_f_tex.scalex = 0.3; self.img_f_tex.scaley = 0.3
     self.img_f_svg = Gcairo:LoadImage("icon_f_lua", "byt3d/data/icons/generic_obj_home_64.png")
-    self.img_f_svg.scalex = 0.4; self.img_f_svg.scaley = 0.4
+    self.img_f_svg.scalex = 0.3; self.img_f_svg.scaley = 0.3
     --print("Starting AssetManager....")
 
     self.panel_move = { pos = 0.0 }
@@ -188,7 +187,15 @@ function PEditorAssetList:Begin()
     -- 16 filter types should be enough for anyone!!! (famous last words)
     if self.filterMask == nil then self.filterMask = 0xFFFF end
     self.oldFilterMask = self.filterMask
+
+    self.select = 1
+    self.selected_asset = nil
+    self.selected_type  = nil
+    self.selected_image = nil
+
+    self.oldbutton = 0
 end
+
 ------------------------------------------------------------------------------------------------------------
 -- Using the project folders collect all the know source files that can be built/used
 --  in a project and build a cache for them.
@@ -204,9 +211,72 @@ function RefreshFiles(callerobj)
     callerobj.meta.assetlist    = {}
 end
 
+------------------------------------------------------------------------------------------------------------
+-- Callerobj has meta data that points to the asset list object
+function SelectedAsset( callerobj )
+
+    local assetlist = callerobj.meta.alist
+    local sfile = callerobj.meta.sfile
+    local sext  = dir:getextension(sfile)
+    local exttype = assetlist.FilterMap[sext]
+
+    -- print(sfile, sext, exttype, assetlist.SVG_FILTER, assetlist.MESH_FILTER)
+
+    if exttype == assetlist.MESH_FILTER or exttype == assetlist.SVG_FILTER then
+        assetlist.selected_asset = sfile
+        assetlist.selected_type  = exttype
+        assetlist.selected_image = callerobj.meta.image
+    end
+end
+
+------------------------------------------------------------------------------------------------------------
+
 function PEditorAssetList_CB()
     coroutine.yield()
 end
+
+------------------------------------------------------------------------------------------------------------
+
+function PEditorAssetList:PanelAssetIcons(left)
+
+    -- The new list object for displaying all the icons.
+    local asseticons = Gcairo:List("asset_icons", 0, 0, ASSETPANEL_WIDTH, Gcairo.HEIGHT - 80)
+    local tbl = {}
+
+    -- Go through the asst list - if it has an icon, then show it or show name.
+    for k,v in pairs(self.assetlist) do
+
+        local lineobjs = {}
+
+        local origname = gCache:GetFile(v)
+        local localname = origname
+        local fext = dir:getextension(localname)
+        if( fext ~= "png" ) then
+            localname = string.gsub(origname, "%.", "_").."_icon.png"
+        end
+
+        Gcairo:ListAddSpace(lineobjs, 10)
+        if fileio:exists(localname) == true then
+            local img = Gcairo:LoadImage("icon_"..tostring(k), localname)
+            local alist = self
+            local meta = { alist=alist, sfile=origname, image=img }
+            local linedata = Gcairo:ListAddImage(lineobjs, "image_"..tostring(k), img, 32, CAIRO_STYLE.WHITE, SelectedAsset, meta)
+        end
+
+        Gcairo:ListAddSpace(lineobjs, 10)
+        Gcairo:ListAddText(lineobjs, dir:getfilename(origname), 12)
+        Gcairo:ListAddLine(tbl, lineobjs, "line_"..tostring(k), 48)
+
+        local lineobjs2 = {}
+        Gcairo:ListAddText(lineobjs2, " ", 10)
+        Gcairo:ListAddLine(tbl, lineobjs2, "line_"..tostring(k*100), 40)
+    end
+
+    asseticons.nodes = tbl
+    Gcairo:Panel(" Assets", left + 2, 40, 12, 0, asseticons)
+end
+
+------------------------------------------------------------------------------------------------------------
 
 function PEditorAssetList:CollectAllFiles()
 
@@ -215,7 +285,8 @@ function PEditorAssetList:CollectAllFiles()
     self.allfiles = {}
     local templist = {}
     for k,v in pairs(datafolders) do
-        templist = dir:listfolder(v, templist, 1, PEditorAssetList_CB)
+        -- templist = dir:listfolder(v, templist, 1, PEditorAssetList_CB)
+        templist = gCache:CheckCacheFolder(v, templist, PEditorAssetList_CB)
     end
 
     -- Filter the list - this should be quick but we can use coroutines to keep the refresh icon
@@ -226,9 +297,9 @@ function PEditorAssetList:CollectAllFiles()
             local mask = self.FilterMap[ext]
             if bit.band(self.filterMask, mask) > 0 then
                 --print(k,v.name, v.path)
-                table.insert(self.assetlist, v.name)
+                table.insert(self.assetlist, v.source)
             end
-            table.insert(self.allfiles, v.name)
+            table.insert(self.allfiles, v.source)
         end
         coroutine.yield()
     end
@@ -270,6 +341,25 @@ end
 
 ------------------------------------------------------------------------------------------------------------
 
+function PEditorAssetList:AddModel( filename, pos )
+    -- The mesh should convert the model to binary - to be used afterwards
+    local tmodel = LoadModel(filename)
+    tmodel:SetMeshProperty("priority", byt3dRender.OPAQUE)
+    tmodel.node.transform:Position(pos[1], pos[2], pos[3])
+
+    local newtex = byt3dTexture:New()
+    newtex:NewColorImage( {255.0, 0.0, 255.0, 255.0} )
+
+    local newshader = byt3dShader:NewProgram(colour_shader_vert, colour_shader_frag)
+    newshader.name = "Shader_Default"
+
+    tmodel:SetMeshProperty("shader", newshader)
+    tmodel:SetSamplerTex(newtex, "s_tex0")
+    return tmodel
+end
+
+------------------------------------------------------------------------------------------------------------
+
 function PEditorAssetList:Update(mxi, myi, buttons)
 
     if self.cache_state == 0 then
@@ -280,44 +370,83 @@ function PEditorAssetList:Update(mxi, myi, buttons)
     local saved = Gcairo.style.button_color
 
     local left = Gcairo.WIDTH - self.panel_move.pos
-    Gcairo.style.button_color.a=0.9
+    Gcairo.style.button_color = { r=0.2, g=0.6, b=0.2, a=0.9 }
     Gcairo:RenderBox(left, 1, ASSETPANEL_WIDTH, Gcairo.HEIGHT-2, 0)
-    Gcairo.style.button_color = saved
+
+    Gcairo.style.button_color = { r=1, g=1, b=1, a=1 }
+    Gcairo:RenderBox(left, 28, ASSETPANEL_WIDTH, 1, 0)
 
     -- Cache updater - this needs to check the cache state externally
     -- TODO: Make the cache statemanager that looks after these files
     if self.cache_state == 0 then
-        Gcairo:RenderImage(self.img_refresh, left + 50, 20, self.refresh)
+        Gcairo:RenderImage(self.img_refresh, left + 47, 15, self.refresh)
         self.refresh = self.refresh + 0.2
     else
-        Gcairo:ButtonImage("button_refresh", self.img_refresh, left+37, 7, RefreshFiles, self )
+        Gcairo:ButtonImage("button_refresh", self.img_refresh, left+37, 5, RefreshFiles, self )
     end
 
     -- Close the panel manually
-    Gcairo:ButtonImage("button_close", self.img_close, left+7, 7, AssetListFolderCancel, self )
+    Gcairo:ButtonImage("button_close", self.img_close, left+7, 5, AssetListFolderCancel, self )
 
     -- Render the toggle buttons based on their toggle state. Each button has its own bitmask
     local image_saved = Gcairo.style.image_color.a
     self:SetImageStyle(self.LUA_FILTER)
-    Gcairo:ButtonImage("button_filter_lua", self.img_f_lua, left+67, 7, AssetListToggle, { this=self, mask=self.LUA_FILTER } )
+    Gcairo:ButtonImage("button_filter_lua", self.img_f_lua, left+67, 5, AssetListToggle, { this=self, mask=self.LUA_FILTER } )
     self:SetImageStyle(self.MESH_FILTER)
-    Gcairo:ButtonImage("button_filter_mesh", self.img_f_mesh, left+97, 7, AssetListToggle, { this=self, mask=self.MESH_FILTER } )
+    Gcairo:ButtonImage("button_filter_mesh", self.img_f_mesh, left+97, 5, AssetListToggle, { this=self, mask=self.MESH_FILTER } )
     self:SetImageStyle(self.TEX_FILTER)
-    Gcairo:ButtonImage("button_filter_tex", self.img_f_tex, left+127, 7, AssetListToggle, { this=self, mask=self.TEX_FILTER } )
+    Gcairo:ButtonImage("button_filter_tex", self.img_f_tex, left+127, 5, AssetListToggle, { this=self, mask=self.TEX_FILTER } )
     self:SetImageStyle(self.SVG_FILTER)
-    Gcairo:ButtonImage("button_filter_svg", self.img_f_svg, left+157, 7, AssetListToggle, { this=self, mask=self.SVG_FILTER } )
+    Gcairo:ButtonImage("button_filter_svg", self.img_f_svg, left+157, 5, AssetListToggle, { this=self, mask=self.SVG_FILTER } )
     Gcairo.style.image_color.a=image_saved
 
     self:FilterAssetList()
+    Gcairo.style.button_color = { r=0.2, g=0.6, b=0.2, a=0.4 }
 
     -- Generate the panel
-    Gcairo:PanelListText(" Assets", left + 2, 40, 20, 18, ASSETPANEL_WIDTH,  Gcairo.HEIGHT-80, self.assetlist)
+    -- Gcairo:PanelListText(" Assets", left + 2, 40, 12, 11, ASSETPANEL_WIDTH,  Gcairo.HEIGHT-80, self.assetlist)
+
+    -- Make a panel that displays icons if available - auto size.. and so on.
+    self:PanelAssetIcons(left)
+
     Gcairo.style.button_color = saved
 
     -- Save the last filter mask so we can check for changes (only update on change)
     if self.cache_state > 0 then
         self.oldFilterMask = self.filterMask
     end
+
+    -- Button released event
+    if buttons[1] == true and self.oldbutton == false and self.selected_image then
+
+        -- Put the object in the world!!!
+        -- If SVG then add to the Interface Render in the Level
+        if( self.selected_type == self.SVG_FILTER ) then
+
+            local svgdata = Gcairo:LoadSvg(self.selected_asset)
+            svgdata.pos = { x=mxi, y=myi }
+            Gcairo:AddSvg(svgdata)
+            self:Close()
+
+        -- If Mesh then add to the world with position as a ray trace
+        elseif( self.selected_type == self.MESH_FILTER ) then
+
+            local pos = { 0.0, 0.0, 0.0 }
+            self.model = self:AddModel(self.selected_asset, pos)
+            self:Close()
+        end
+
+        self.selected_asset = nil
+        self.selected_type  = nil
+        self.selected_image = nil
+    end
+
+    if self.selected_image then
+
+        Gcairo:RenderImage(self.selected_image, mxi  * Gcairo.mouseScaleX - 16, myi * Gcairo.mouseScaleY - 16, 0)
+    end
+
+    self.oldbutton = buttons[1]
 end
 
 ------------------------------------------------------------------------------------------------------------

@@ -16,7 +16,8 @@ local Smainstartup	= NewState()
 	
 ------------------------------------------------------------------------------------------------------------
 -- Making this global gives all modules access to it
-Gcairo = require("scripts/cairo_ui/base")
+
+Gcairo      = require("scripts/cairo_ui/base")
 
 ------------------------------------------------------------------------------------------------------------
 
@@ -38,7 +39,7 @@ function Smainstartup:Init(wwidth, wheight)
 	self.width 		= wwidth
 	self.height 	= wheight
 	Gcairo.newObject	= nil
-	
+
 	Gcairo:Init(self.width, self.height)
 	initComplete = true
 	
@@ -61,6 +62,14 @@ function AssetManager(callerobj)
 
 	--sm:JumpToState("MainMenu")
 	sm:JumpToState("AssetManager")
+end
+
+------------------------------------------------------------------------------------------------------------
+
+function ShowAbout(callerobj)
+
+    --sm:JumpToState("MainMenu")
+    sm:JumpToState("AboutPage")
 end
 
 ------------------------------------------------------------------------------------------------------------
@@ -131,13 +140,13 @@ function Smainstartup:Update(mxi, myi, buttons)
 	-- Play
 	Gcairo.style.button_color = { r=0.9, b=0.1, g=0.3, a=1 }
 	Gcairo:RenderBox(380, 120, 250, 150, 0)
-	Gcairo:RenderMultiSlideImage("MS_play", { self.scenario1, self.scenario2, self.scenario3, self.scenario4, self.scenario5, self.scenario6, self.scenario7 }, 380, 130, 6.0, 0.7, nil)
+	Gcairo:RenderMultiSlideImage("MS_play", { self.scenario1, self.scenario2, self.scenario3, self.scenario4, self.scenario5, self.scenario6, self.scenario7 }, 380, 130, 250, 6.0, 0.7, nil)
 	Gcairo:RenderText("Play", 400, 255, 20, tcolor )
 	
 	-- Configure
 	Gcairo.style.button_color = { r=0.3, b=0.3, g=0.3, a=1 }
 	Gcairo:RenderBox(640, 120, 250, 150, 0)
-	Gcairo:RenderMultiSlideImage("MS_configure", { self.config1, self.config2, self.config3, self.config4 }, 640, 165, 8.0, 1.2, nil)
+	Gcairo:RenderMultiSlideImage("MS_configure", { self.config1, self.config2, self.config3, self.config4 }, 640, 165, 250, 8.0, 1.2, nil)
 	Gcairo:RenderText("Configure", 770, 150, 20, tcolor )
 	
 	-- About
@@ -145,7 +154,7 @@ function Smainstartup:Update(mxi, myi, buttons)
 	Gcairo:RenderBox(120, 280, 120, 150, 0)
 	Gcairo:RenderText("About", 140, 415, 20, tcolor )
 	-- Animated images?
-	Gcairo:RenderMultiImage("MS_about", { self.icon4, self.icon5 }, 150, 310, 4.3, 1.0, nil)
+	Gcairo:RenderMultiImage("MS_about", { self.icon4, self.icon5 }, 150, 310, 4.3, 1.0, ShowAbout)
 	
 	-- Help
 	Gcairo.style.button_color = { r=0.85, g=0.65, b=0.0, a=1 }
@@ -179,8 +188,8 @@ end
 ------------------------------------------------------------------------------------------------------------
 
 function Smainstartup:Render()
-	
-	Gcairo:Render()		
+
+	Gcairo:Render()
 end
 
 ------------------------------------------------------------------------------------------------------------

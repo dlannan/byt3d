@@ -29,6 +29,12 @@ function VecDot(vec1, vec2)
     return res
 end
 
+function VecMult(vec1, scalar)
+    local res = { vec1[1] * scalar,  vec1[2]  * scalar,  vec1[3] * scalar }
+    return res
+end
+
+
 function VecNormalize(vec)
 	local d = 1.0 / math.sqrt( vec[1] * vec[1] + vec[2] * vec[2] + vec[3] * vec[3] + vec[4] * vec[4] )
 	local ret = { vec[1] * d, vec[2] * d, vec[3] * d, vec[4] * d } 
@@ -261,49 +267,48 @@ function Matrix44:RotationHPR( x, y, z )
 
 	-- Make xyz into radians
 	local out1 = Matrix44:New()
-	local tm3 = Matrix44:New()	
-	if( math.abs(z) > 0.0 ) then 
-		tm2:RotateAxis(z,  0, 0, 1 )
-		out1 = out1:Mult44(out1, tm3) 
-	end		
+    local tm3 = Matrix44:New()
+    if( math.abs(z) > 0.0 ) then
+        tm3:RotateAxis(z,  0, 0, 1 )
+        out1 = out1:Mult44(out1, tm3)
+    end
+    local tm2 = Matrix44:New()
+    if( math.abs(y) > 0.0 ) then
+        tm2:RotateAxis(y,  1, 0, 0 )
+        out1 = out1:Mult44(out1, tm2)
+    end
 	local tm1 = Matrix44:New()
 	if( math.abs(x) > 0.0 ) then 
 		tm1:RotateAxis(x, 0, 1, 0) 
 		out1 = out1:Mult44(out1, tm1)
 	end
-	local tm2 = Matrix44:New()	
-	if( math.abs(y) > 0.0 ) then
-		tm2:RotateAxis(y,  1, 0, 0 ) 
-		out1 = out1:Mult44(out1, tm2)
-	end	
-		
+
 	self.m = out1.m
 end
 
 ------------------------------------------------------------------------------------------------------------
 
 function Matrix44:RotateHPR( x, y, z )
+
 	-- Make xyz into radians
-	local out1 = Matrix44:New()
-	out1:Copy(self)
-	
-	local tm3 = Matrix44:New()	
-	if( math.abs(z) > 0.0 ) then 
-		tm2:RotateAxis(z,  0, 0, 1 )
-		out1 = out1:Mult44(out1, tm3) 
-	end		
-	local tm1 = Matrix44:New()
-	if( math.abs(x) > 0.0 ) then 
-		tm1:RotateAxis(x, 0, 1, 0) 
-		out1 = out1:Mult44(out1, tm1)
-	end
-	local tm2 = Matrix44:New()	
-	if( math.abs(y) > 0.0 ) then
-		tm2:RotateAxis(y,  1, 0, 0 ) 
-		out1 = out1:Mult44(out1, tm2)
-	end	
-		
-	self.m = out1.m
+	local out1 = self
+    local tm1 = Matrix44:New()
+    if( math.abs(x) > 0.0 ) then
+        tm1:RotateAxis(x, 0, 1, 0)
+        out1 = out1:Mult44(out1, tm1)
+    end
+    local tm2 = Matrix44:New()
+    if( math.abs(y) > 0.0 ) then
+        tm2:RotateAxis(y,  1, 0, 0 )
+        out1 = out1:Mult44(out1, tm2)
+    end
+    local tm3 = Matrix44:New()
+    if( math.abs(z) > 0.0 ) then
+        tm3:RotateAxis(z,  0, 0, 1 )
+        out1 = out1:Mult44(out1, tm3)
+    end
+
+    self.m = out1.m
 end
 
 ------------------------------------------------------------------------------------------------------------
@@ -345,8 +350,10 @@ end
 
 function Matrix44:Translate( x, y, z )
 
-    local vec = self:pos()
-	self:Position( vec[1] + x, vec[2] + y, vec[3] + z )
+    self.m[13] = self.m[13] + (self.m[1] * x + self.m[5] * y + self.m[9]  * z)
+    self.m[14] = self.m[14] + (self.m[2] * x + self.m[6] * y + self.m[10] * z)
+    self.m[15] = self.m[15] + (self.m[3] * x + self.m[7] * y + self.m[11] * z)
+    self.m[16] = self.m[16] + (self.m[4] * x + self.m[8] * y + self.m[12] * z)
 end
 
 ------------------------------------------------------------------------------------------------------------
@@ -357,28 +364,31 @@ function Matrix44:Position( x, y, z )
 end
 
 ------------------------------------------------------------------------------------------------------------
+ -- TODO: Some more examination here needed - dont like this.
 
 function Matrix44:LookAt( eye, target )
 
-    local Eye 	= { eye[1], eye[2], eye[3], 0.0 }
+    local Eye 	= { eye[1], eye[2], eye[3], 1.0 }
 	local At 	= { target[1], target[2], target[3], 0.0 }
 	local Up	= { 0.0, 1.0, 0.0, 0.0 }
 
-	local zdiff   = { At[1] - Eye[1], At[2] - Eye[2], At[3] - Eye[3], 0.0 }
-    local zdiffN = VecNormalize(zdiff)
-    local xzplane = { zdiff[1], 0.0, zdiff[3], 0.0 }
-    xzplane = VecNormalize(xzplane)
-    -- Heading is the angle away from 0, 0, -1
-    local theta = math.acos( VecDot(xzplane, {0.0, 0.0, -1.0} ) )
-    local rho = math.acos( VecDot( zdiffN, xzplane ))
+	local lookvec   = { At[1] - Eye[1], At[2] - Eye[2], At[3] - Eye[3], 0.0 }
+    local lookvecN  = VecNormalize(lookvec)
+    local xzplane   = { lookvec[1], 0.0, lookvec[3], 0.0 }
+    xzplane         = VecNormalize(xzplane)
 
-    local heading = math.deg(theta)
-    local pitch = -math.deg(rho)
+    -- Heading is the angle away from 0, 0, -1
+    local theta     = math.acos( VecDot( xzplane, { 0.0, 0.0, -1.0 } ) )
+    local rho       = math.acos( VecDot( lookvecN, xzplane ))
+
+    local heading   = math.deg(theta)
+    local pitch     = -math.deg(rho)
+    local roll      = 0.0
 
     self:Identity()
     self:Translate( -Eye[1], -Eye[2], -Eye[3] )
-    self:RotateHPR( heading, pitch, 0.0 )
-    --
+    self:RotateHPR( heading, pitch, roll )
+
     return heading, pitch
 end
 
@@ -389,24 +399,27 @@ function Matrix44:Frustum( left,  right,  bottom,  top,  znear,  zfar)
 
     local zDelta = (zfar-znear)
     local dir = (right-left)
-    local height = (bottom-top)
+    local height = (top-bottom)
     local zNear2 = 2*znear
 
-    self.m[1]= zNear2 / (right - left)
+    self.m[1]= zNear2 / dir
     self.m[2]=0.0
-    self.m[3]=(right + left) / dir
+    self.m[3]=0.0
     self.m[4]=0.0
+
     self.m[5]=0.0
-    self.m[6]= zNear2 / (top - bottom)
-    self.m[7]=(top+bottom) / height
+    self.m[6]= zNear2 / height
+    self.m[7]=0.0
     self.m[8]=0.0
-    self.m[9]=0.0
-    self.m[10]=0.0
-    self.m[11]=-(zfar + znear)/zDelta;
-    self.m[12]=(-2.0 * zfar * znear )/zDelta;
+
+    self.m[9]= (right + left) / dir
+    self.m[10]= (top + bottom) / height
+    self.m[11]=-(zfar + znear) / zDelta;
+    self.m[12]=-1.0
+
     self.m[13]=0.0
     self.m[14]=0.0
-    self.m[15]= -1
+    self.m[15]=-zNear2 * zfar / zDelta
     self.m[16]=0.0
 end
 
@@ -414,6 +427,28 @@ end
 -- Return a perspective matrix44 given the field-of-view in the Y
 --   direction in degrees, the aspect ratio of Y/X, and near and
 --   far plane distances.
+-- function GetMatrixArray
+-- 		arguments:	float *tMat					this variable gets set with the transformation matrix values and must be allocated ahead of time by the user
+-- 		returns:	void
+--  Uses the calculated values to create an OpenGL ES 2.0 compatible matrix that the user can put in a vertex shader
+function Matrix44:GetMatrixArray()
+
+    local tproj = ffi.new("float[16]",
+        {
+            self.m[1], self.m[2], self.m[3], 0.0,
+            self.m[5], self.m[6], self.m[7], 0.0,
+            self.m[9], self.m[10], self.m[11], 0.0,
+            - VecDot(self:right(), self:pos()), -VecDot(self:up(), self:pos()), -VecDot(self:view(), self:pos()), 1.0
+        }
+    )
+    return tproj
+end
+
+------------------------------------------------------------------------------------------------------------
+-- Return a perspective matrix44 given the field-of-view in the Y
+--   direction in degrees, the aspect ratio of Y/X, and near and
+--   far plane distances.
+
 function Matrix44:Perspective( fovY,  aspect,  znear,  zfar)
     -- These paramaters are about lens properties.
     -- The "near" and "far" create the Depth of Field.
@@ -427,28 +462,10 @@ function Matrix44:Perspective( fovY,  aspect,  znear,  zfar)
     -- Aspect Ratio of 1.0 represents a square area.
 
     -- Some calculus before the formula.
-    local size = znear * math.tan(math.rad(fovY))
-    local left = -size
-    local right = size
-    local bottom = -size / aspect
-    local top = size / aspect
+    local frustumH = znear * math.tan(math.rad(fovY)/2.0)
+    local frustumW = frustumH * aspect
 
-    self.m[1]= znear / right
-    self.m[2]=0.0
-    self.m[3]=0.0
-    self.m[4]=0.0
-    self.m[5]=0.0
-    self.m[6]= znear / top
-    self.m[7]=0.0
-    self.m[8]=0.0
-    self.m[9]= 0.0
-    self.m[10]= 0.0
-    self.m[11]=-(zfar + znear) / (zfar - znear)
-    self.m[12]=-2.0 * zfar * znear / (zfar - znear)
-    self.m[13]=0.0
-    self.m[14]=0.0
-    self.m[15]=-1.0
-    self.m[16]=0.0
+    self:Frustum(-frustumW, frustumW, -frustumH, frustumH, znear, zfar)
 end
 
 ------------------------------------------------------------------------------------------------------------
@@ -460,25 +477,25 @@ function Matrix44:Ortho( l,  r,  b,  t,  n,  f)
 	local height = t-b
 	local depth = f-n
 
-	self.m[1] = 1.0 / r
+	self.m[1] = 2.0 / width
 	self.m[2] = 0.0
 	self.m[3] = 0.0
 	self.m[4] = 0.0
 
 	self.m[5] = 0.0
-	self.m[6] = 1.0 / t
+	self.m[6] = 2.0 / height
 	self.m[7] = 0.0
 	self.m[8] = 0.0
 
 	self.m[9] = 0.0
 	self.m[10] = 0.0
 	self.m[11] = -2.0 / depth
-	self.m[12] = f+n / depth
+	self.m[12] = 0.0
 
 	self.m[13] = -(r + l) / width
     self.m[14] = -(t + b) / height
 	self.m[15] = -(f + n) / depth
-	self.m[16] = 1.0
+	self.m[16] = 0.0
 end
 
 ------------------------------------------------------------------------------------------------------------

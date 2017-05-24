@@ -11,9 +11,8 @@ colour_shader = [[
 	varying vec2 	v_texCoord0;
 	
 	void main() {
-	    vec4 position = vec4(vPosition.xyz, 1.0);
 	    vColor = vec4(1.0, 1.0, 1.0, 1.0); 
-	    gl_Position =  position; 
+	    gl_Position =  vec4(vPosition.xyz, 1.0);
 	    v_texCoord0 = vTexCoord;
 	}
 ]]

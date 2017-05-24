@@ -4,6 +4,8 @@ local ffi 	= require( "ffi" )
 ------------------------------------------------------------------------------------------------------------
 
 require("math/Matrix44")
+require("math/Maths")
+
 require("framework/byt3dNode")
 require("framework/byt3dMesh")
 
@@ -79,6 +81,8 @@ function byt3dModel:FromFile(dModel)
     newModel.node       = byt3dNode:New()
 
     newModel:LoadChildNodes(dModel.byt3dModel.node)
+    -- Opague is the default
+    newModel:SetMeshProperty("priority", byt3dRender.OPAQUE)
 
     return newModel
 end
@@ -130,6 +134,39 @@ function byt3dModel:Load( fileobject, modelname )
 --    
 --    -- //End of example
 --    importer.Dispose();
+end
+
+
+------------------------------------------------------------------------------------------------------------
+--    /// <summary>
+--    /// Add to bounds and recurse children
+--    /// </summary>
+
+function byt3dModel:RecursiveBound( nd, Min, Max, Ctr )
+
+    -- // draw all meshes assigned to this node
+    for k,v in pairs(nd.blocks) do
+        Min, Max, Ctr = MergeBounds(v.boundMin, v.boundMax, Min, Max, Ctr)
+    end
+
+    -- Iterate into the model and build bounds
+    for k,v in pairs(nd.children) do
+        local tmin, tmax, tctr = self:RecursiveBound(v, Min, Max, Ctr)
+        Min, Max, Ctr = MergeBounds(tmin, tmax, Min, Max, Ctr)
+    end
+
+    return Min, Max, Ctr
+end
+
+------------------------------------------------------------------------------------------------------------
+--    /// <summary>
+--    /// Build the bounding box data for this model
+--    /// </summary>
+function byt3dModel:BuildBounds()
+
+    -- Iterate into the model and build bounds
+    local tmin, tmax, tctr = self:RecursiveBound(self.node, self.boundMin, self.boundMax, self.boundCtr)
+    self.boundMin, self.boundMax, self.boundCtr = MergeBounds(tmin, tmax, self.boundMin, self.boundMax, self.boundCtr)
 end
 
 ------------------------------------------------------------------------------------------------------------
@@ -218,10 +255,14 @@ function byt3dModel:RecursiveRender( nd )
 
     -- // draw all meshes assigned to this node
     for k,v in pairs(nd.blocks) do
-		if(v.Render) then
-			v.modelMatrix = tmat    
-    		v:Render()
-    	end
+
+        -- Only do this for meshes!
+        if v.blockType == "byt3dMesh" then
+            if(v.Render) then
+                v.modelMatrix = tmat
+                v:Render()
+            end
+        end
     end
 
     -- // draw all children
@@ -246,100 +287,36 @@ end
 
 ------------------------------------------------------------------------------------------------------------
 --    /// <summary>
---    /// 
+--    /// Set each new childs property and value setting for a mesh
 --    /// </summary>
---    /// <param name="nd"></param>
---    /// <param name="shader"></param>
-function byt3dModel:RecursiveSetShader( nd, shader )
+--    /// <param name="nd"> node of the child mesh to set (if its a mesh) </param>
+--    /// <param name="property"> property string name to be setting</param>
+--    /// <param name="value"> value to set the property to</param>
+function byt3dModel:RecursiveSetMeshProperty( nd, property, value )
 
     -- // draw all meshes assigned to this node
     for k,v in pairs(nd.blocks) do
-		if v.SetShader then
-            v:SetShader(shader)
-        end
+        -- Only do this for meshes!
+        if v.blockType == "byt3dMesh" then v[property] = value end
     end
 
     -- // draw all children
     for k,v in pairs(nd.children) do
-    
-        self:RecursiveSetShader(v, shader)
+        self:RecursiveSetMeshProperty(v, property, value)
     end
 end
 
 ------------------------------------------------------------------------------------------------------------
 --    /// <summary>
---    /// 
---    /// </summary>
---    /// <param name="nd"></param>
---    /// <param name="priority"></param>
-function byt3dModel:RecursiveSetPriority( nd, priority )
-
-    -- // draw all meshes assigned to this node
-    for k,v in pairs(nd.blocks) do
-		if v.SetPriority then
-            v:SetPriority(priority)
-        end
-    end
-
-    -- // draw all children
-    for k,v in pairs(nd.children) do
-    
-        self:RecursiveSetPriority(v, priority)
-    end
-end
-------------------------------------------------------------------------------------------------------------
---    /// <summary>
---    /// Assign shader params 
---    /// </summary>
---    /// <param name="shader"></param>
-function byt3dModel:SetShader( shader )
-
-    self.shader 		= shader    
-    self:RecursiveSetShader(self.node, shader)
-end
-
-------------------------------------------------------------------------------------------------------------
---    /// <summary>
---    /// Set priority of all meshes
+--    /// Set some property of a mesh - this should be used for alpha etc.. now (doh!)
 --    /// </summary>
 --    /// <param name="priority"></param>
-function byt3dModel:SetPriority( priority )
+function byt3dModel:SetMeshProperty( property, value )
 
-    self.priority 		= priority    
-    self:RecursiveSetPriority(self.node, priority)
+    self[property] 		= value
+    self:RecursiveSetMeshProperty(self.node, property, value)
 end
 
-------------------------------------------------------------------------------------------------------------
---    /// <summary>
---    /// Set each new childs alpha setting for a mesh
---    /// </summary>
---    /// <param name="tex"></param>
---    /// <param name="sampler"></param>
-function byt3dModel:RecursiveSetAlpha( nd, alpha )
-
-    -- // draw all meshes assigned to this node
-    for k,v in pairs(nd.blocks) do
-		
-		v.alpha = alpha
-    end
-
-    -- // draw all children
-    for k,v in pairs(nd.children) do
-    
-        self:RecursiveSetAlpha(v, alpha)
-    end
-end
-
-------------------------------------------------------------------------------------------------------------
---    /// <summary>
---    /// Set alpha value of the meshes attached (makes the model render using blending)
---    /// </summary>
---    /// <param name="priority"></param>
-function byt3dModel:SetAlpha( alpha )
-
-    self.alpha 		= alpha    
-    self:RecursiveSetAlpha(self.node, alpha)
-end
 
 ------------------------------------------------------------------------------------------------------------
 --    /// <summary>
@@ -352,8 +329,12 @@ function byt3dModel:RecursiveSetSamplerTex( nd, tex, sampler )
     -- // draw all meshes assigned to this node
     for k,v in pairs(nd.blocks) do
 
-		if v.SetTexture then    
-            v:SetTexture(tex) -- /// TODO: Fix me to support multi-tex
+        -- Only do this for meshes!
+        if v.blockType == "byt3dMesh" then
+
+            if v.SetTexture then
+                v:SetTexture(tex) -- /// TODO: Fix me to support multi-tex
+            end
         end
     end
 
@@ -374,6 +355,54 @@ end
 function byt3dModel:SetSamplerTex( tex, sampler )
 
     self:RecursiveSetSamplerTex(self.node, tex, sampler)
+end
+
+------------------------------------------------------------------------------------------------------------
+
+function byt3dModel:RecursiveGetMeshes(nd, meshes)
+
+    -- // draw all meshes assigned to this node
+    for k,v in pairs(nd.blocks) do
+
+        if v.blockType == "byt3dMesh" then
+            table.insert(meshes, v)
+        end
+    end
+
+    -- // draw all children
+    for k,v in pairs(nd.children) do
+
+        self:RecursiveGetMeshes(v, meshes)
+    end
+    return meshes
+end
+
+------------------------------------------------------------------------------------------------------------
+
+function byt3dModel:GetMeshes()
+
+    local meshes = {}
+    meshes = self:RecursiveGetMeshes(self.node, meshes)
+    return meshes
+end
+
+------------------------------------------------------------------------------------------------------------
+
+function byt3dModel:GetBlock( ct, btype )
+
+    -- Get root node...
+    local nd = self.node
+    local count = 1
+    -- // draw all meshes assigned to this node
+    for k,v in pairs(nd.blocks) do
+
+        if v.blockType == btype and count == ct then
+            return v
+        end
+        count = count + 1
+    end
+
+    return nil
 end
 
 ------------------------------------------------------------------------------------------------------------
@@ -482,7 +511,7 @@ function byt3dModel:GenerateCube( sz, d )
 
     local name = string.format("Dynamic Mesh Cube(%02d)", gCubeCount)
     gCubeCount = gCubeCount + 1  
-    self.node:AddBlock(cube, name)
+    self.node:AddBlock(cube, name, "byt3dMesh")
     
     self.boundMax = { sz, sz, sz, 0.0 }
     self.boundMin = { -sz, -sz, -sz, 0.0 }
@@ -493,18 +522,19 @@ end
 
 ------------------------------------------------------------------------------------------------------------
 
-function byt3dModel:GenerateSphere( sz, d )
+function byt3dModel:GenerateSphere( sz, d, inverted )
 
+    if inverted == nil then inverted = 1.0 end
     local sphere 	= byt3dMesh:New()
 
     local verts 	= {}
     local indices 	= {} 
     local uvs 		= {}
 
-    local vcount = 1
-    local ucount = 1
-    local icount = 1
-    local index = 1
+    local vcount    = 1
+    local ucount    = 1
+    local icount    = 1
+    local index     = 1
 
 	-- Start with a cube. Then for number x/y sizes iterate each side of the cube
 	-- For each side of the cube cal vert trace back to center of cube, then recalc vert based on radius.
@@ -522,7 +552,7 @@ function byt3dModel:GenerateSphere( sz, d )
 		[4] = function( a, b ) return spherevec( { -sz, b, a, -1, 0.25, 0.333 } ); end,
 		[5] = function( a, b ) return spherevec( { sz, b, a, 1, 0.0, 0.333 } ); end,
 		[6] = function( a, b ) return spherevec( { a, sz, b, 1, 0.0, 0.333 } ); end
-	  }
+	}
 	  
 	local startuvs = {
 		[1] = { 0.25, 0.666 },		-- Ground
@@ -531,7 +561,7 @@ function byt3dModel:GenerateSphere( sz, d )
 		[4] = { 0.0, 0.333 },		-- Left
 		[5] = { 0.5, 0.333 },		-- Right
 		[6] = { 0.25, 0.0 }			-- Sky
-		}
+	}
 	  
 	local stepsize = sz * 2 / d
 	for key, func in ipairs(targets) do
@@ -546,43 +576,44 @@ function byt3dModel:GenerateSphere( sz, d )
 		
 			local uv2 = startuvs[key][2]
 			for b = -sz, sz-stepsize, stepsize do
-			
+                local toggle = 1
+
 				local v = func(a, b)
-				indices[index]  = icount-1 ; index = index + 1
-				verts[vcount] = v[1]; vcount = vcount + 1
-				verts[vcount] = v[2]; vcount = vcount + 1
-				verts[vcount] = v[3]; vcount = vcount + 1
-				uvs[ucount] = uv1 + v[5] + v[4] * (a + sz) * amult; ucount = ucount + 1
-				uvs[ucount] = uv2 + v[6] - (b + sz) * bmult; ucount = ucount + 1
+				indices[index]  = icount+v[4] * inverted ; index = index + 1
+				verts[vcount]   = v[1]; vcount = vcount + 1
+				verts[vcount]   = v[2]; vcount = vcount + 1
+				verts[vcount]   = v[3]; vcount = vcount + 1
+				uvs[ucount]     = uv1 + v[5] + v[4] * (a + sz) * amult; ucount = ucount + 1
+				uvs[ucount]     = uv2 + v[6] - (b + sz) * bmult; ucount = ucount + 1
 
 				local x = func(a+stepsize, b)
 				indices[index]  = icount ; index = index + 1
-				verts[vcount] = x[1]; vcount = vcount + 1
-				verts[vcount] = x[2]; vcount = vcount + 1
-				verts[vcount] = x[3]; vcount = vcount + 1
-				uvs[ucount] = uv1 + x[5] + x[4] * (a + sz + stepsize) * amult; ucount = ucount + 1
-				uvs[ucount] = uv2 + x[6] - (b + sz) * bmult; ucount = ucount + 1
+				verts[vcount]   = x[1]; vcount = vcount + 1
+				verts[vcount]   = x[2]; vcount = vcount + 1
+				verts[vcount]   = x[3]; vcount = vcount + 1
+				uvs[ucount]     = uv1 + x[5] + x[4] * (a + sz + stepsize) * amult; ucount = ucount + 1
+				uvs[ucount]     = uv2 + x[6] - (b + sz) * bmult; ucount = ucount + 1
 
 				local w = func(a, b+stepsize)
-				indices[index]  = icount+1 ; index = index + 1
-				verts[vcount] = w[1]; vcount = vcount + 1
-				verts[vcount] = w[2]; vcount = vcount + 1
-				verts[vcount] = w[3]; vcount = vcount + 1
-				uvs[ucount] = uv1 + w[5] + w[4] * (a + sz) * amult; ucount = ucount + 1
-				uvs[ucount] = uv2 + w[6] - (b + sz + stepsize) * bmult; ucount = ucount + 1
+				indices[index]  = icount-v[4] * inverted ; index = index + 1
+				verts[vcount]   = w[1]; vcount = vcount + 1
+				verts[vcount]   = w[2]; vcount = vcount + 1
+				verts[vcount]   = w[3]; vcount = vcount + 1
+				uvs[ucount]     = uv1 + w[5] + w[4] * (a + sz) * amult; ucount = ucount + 1
+				uvs[ucount]     = uv2 + w[6] - (b + sz + stepsize) * bmult; ucount = ucount + 1
 
 				local y = func(a+stepsize,b+stepsize)
-				verts[vcount] = y[1]; vcount = vcount + 1
-				verts[vcount] = y[2]; vcount = vcount + 1
-				verts[vcount] = y[3]; vcount = vcount + 1
-				uvs[ucount] = uv1 + y[5] + y[4] * (a + sz + stepsize) * amult; ucount = ucount + 1
-				uvs[ucount] = uv2 + y[6] - (b + sz + stepsize) * bmult; ucount = ucount + 1
-		
-				indices[index]  = icount ; index = index + 1
-				indices[index]  = icount+1 ; index = index + 1
+				verts[vcount]   = y[1]; vcount = vcount + 1
+				verts[vcount]   = y[2]; vcount = vcount + 1
+				verts[vcount]   = y[3]; vcount = vcount + 1
+				uvs[ucount]     = uv1 + y[5] + y[4] * (a + sz + stepsize) * amult; ucount = ucount + 1
+				uvs[ucount]     = uv2 + y[6] - (b + sz + stepsize) * bmult; ucount = ucount + 1
+
+				indices[index]  = icount+2-(1-v[4] * inverted) ; index = index + 1
+				indices[index]  = icount+1-v[4] * inverted ; index = index + 1
 		
 				-- Build the extra tri from previous verts and one new one.
-				indices[index]  = icount+2 ; index = index + 1
+				indices[index]  = icount+1 ; index = index + 1
 				icount = icount + 4
 			end
 		end
@@ -596,7 +627,7 @@ function byt3dModel:GenerateSphere( sz, d )
     
     local name = string.format("Dynamic Mesh Sphere(%02d)", gSphereCount)
     gSphereCount = gSphereCount + 1;    
-    self.node:AddBlock(sphere, name)
+    self.node:AddBlock(sphere, name, "byt3dMesh")
     
     self.boundMax = { sz, sz, sz, 0.0 }
     self.boundMin = { -sz, -sz, -sz, 0.0 }
@@ -629,7 +660,7 @@ function byt3dModel:GeneratePyramid(sz)
     pyramid.ibuffers[1].vertBuffer 		= verts
     pyramid.ibuffers[1].indexBuffer 	= indices
 
-    newmodel.node:AddBlock(pyramid)
+    newmodel.node:AddBlock(pyramid, nil, "byt3dMesh")
     newmodel.boundMax = { sz, sz, sz, 0.0 }
     newmodel.boundMin = { -sz, 0.0, -sz, 0.0 }
     newmodel.boundCtr[1] = (newmodel.boundMax[1] - newmodel.boundMin[1]) * 0.5 + newmodel.boundMin[1]
@@ -641,14 +672,16 @@ end
 
 ------------------------------------------------------------------------------------------------------------
 
-function byt3dModel:GeneratePlane( sx, sy, uvMult )
+function byt3dModel:GeneratePlane( sx, sy, uvMult, offx, offy )
 
-	if uvMult == nil then uvMult = 1.0 end
+    if offx     == nil then offx = 0 end
+    if offy     == nil then offy = 0 end
+	if uvMult   == nil then uvMult = 1.0 end
     local plane 	= byt3dMesh:New()
 
-	local indices		= ffi.new("unsigned short[6]", 1, 0, 2, 2, 3, 0 )
-	local verts		 	= ffi.new( "float[12]", -sx, sy, 0.0, sx, sy, 0.0, sx, -sy, 0.0, -sx, -sy, 0.0 )
-	local uvs		 	= ffi.new( "float[8]", 0.0, 0.0, uvMult, 0.0, uvMult, uvMult, 0.0, uvMult )
+	local indices	= ffi.new("unsigned short[6]", 0, 2, 1, 0, 3, 2 )
+	local verts		= ffi.new( "float[12]", -sx + offx, sy + offy, 0.0, sx + offx, sy + offy, 0.0, sx + offx, -sy + offy, 0.0, -sx + offx, -sy + offy, 0.0 )
+	local uvs		= ffi.new( "float[8]", 0.0, 0.0, uvMult, 0.0, uvMult, uvMult, 0.0, uvMult )
 
     plane.ibuffers[1] = byt3dIBuffer:New()
     plane.ibuffers[1].vertBuffer 		= verts
@@ -659,9 +692,41 @@ function byt3dModel:GeneratePlane( sx, sy, uvMult )
     print("New Plane: "..name)
     gPlaneCount = gPlaneCount + 1;
     
-    self.node:AddBlock(plane, name)
-    self.boundMax = { sx, sy, 0.0, 0.0 }
-    self.boundMin = { -sx, -sy, 0.0, 0.0 }
+    self.node:AddBlock(plane, name, "byt3dMesh")
+    self.boundMax = { sx + offx, sy + offy, 0.0, 0.0 }
+    self.boundMin = { -sx + offx, -sy + offy, 0.0, 0.0 }
+    self.boundCtr[1] = (self.boundMax[1] - self.boundMin[1]) * 0.5 + self.boundMin[1]
+    self.boundCtr[2] = (self.boundMax[2] - self.boundMin[2]) * 0.5 + self.boundMin[2]
+    self.boundCtr[3] = (self.boundMax[3] - self.boundMin[3]) * 0.5 + self.boundMin[3]
+end
+
+------------------------------------------------------------------------------------------------------------
+
+function byt3dModel:GenerateBlock( sx, sy, sz, uvMult )
+
+    if uvMult   == nil then uvMult = 1.0 end
+    local plane 	= byt3dMesh:New()
+
+    local indices	= ffi.new("unsigned short[36]", 0, 1, 2,  2, 3, 0,  6, 5, 7,  7, 5, 4,
+                                                    4, 0, 7,  0, 3, 7,  5, 6, 1,  1, 6, 2,
+                                                    0, 4, 5,  0, 5, 1,  2, 7, 3,  2, 6, 7 )
+    local verts		= ffi.new( "float[24]", -sx, sy, -sz,   sx, sy, -sz,    sx, -sy, -sz,   -sx, -sy, -sz,
+                                            -sx, sy, sz,    sx, sy, sz,     sx, -sy, sz,    -sx, -sy, sz )
+    local uvs		= ffi.new( "float[16]", 0.0, 0.0, uvMult, 0.0, uvMult, uvMult, 0.0, uvMult,
+                                            uvMult, uvMult, 0.0, 0.0, 0.0, uvMult, uvMult, 0.0)
+
+    plane.ibuffers[1] = byt3dIBuffer:New()
+    plane.ibuffers[1].vertBuffer 		= verts
+    plane.ibuffers[1].indexBuffer 		= indices
+    plane.ibuffers[1].texCoordBuffer 	= uvs
+
+    local name = string.format("Dynamic Mesh Block(%02d)", gPlaneCount)
+    io.write("New Plane: ", name, "\n")
+    gPlaneCount = gPlaneCount + 1;
+
+    self.node:AddBlock(plane, name, "byt3dMesh")
+    self.boundMax = { sx, sy, sz, 0.0 }
+    self.boundMin = { -sx, -sy, -sz, 0.0 }
     self.boundCtr[1] = (self.boundMax[1] - self.boundMin[1]) * 0.5 + self.boundMin[1]
     self.boundCtr[2] = (self.boundMax[2] - self.boundMin[2]) * 0.5 + self.boundMin[2]
     self.boundCtr[3] = (self.boundMax[3] - self.boundMin[3]) * 0.5 + self.boundMin[3]

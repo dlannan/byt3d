@@ -29,11 +29,16 @@ byt3dMesh =
 
     boundMin		= { math.huge, math.huge, math.huge, 0.0 },
     boundMax		= { -math.huge, -math.huge, -math.huge, 0.0 },
+    boundCtr		= { 0.0, 0.0, 0.0, 0.0 },
 
     -- // TODO: Need to get this out of here! Need proper materials!!
 	tex0 			= nil,
 	tex1			= nil,
-	
+
+    -- shadow information for mesh - cast and receive
+    shadows_cast    = 1,
+    shadows_recv    = 1,
+
 	-- // Render Priority... 
 	priority		= 1024		
 }

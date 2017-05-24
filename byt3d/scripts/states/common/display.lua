@@ -66,14 +66,14 @@ end
 function SDisplay:PreRender()
 
 	-- No need for clear when BG is being written
-	gl.glClear( gl.GL_COLOR_BUFFER_BIT + gl.GL_DEPTH_BUFFER_BIT )
+    -- TODO: Make this an optional call (no real need for it)
+	gl.glClear( bit.bor(gl.GL_COLOR_BUFFER_BIT, gl.GL_DEPTH_BUFFER_BIT ) )
 end
 
 ------------------------------------------------------------------------------------------------------------
 
 function SDisplay:Flip()
 
-	gl.glFinish()
 	egl.eglSwapBuffers( self.eglInfo.dpy, self.eglInfo.surf )
 end
 

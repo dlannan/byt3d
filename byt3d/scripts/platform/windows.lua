@@ -1,13 +1,5 @@
 
 ------------------------------------------------------------------------------------------------------------
-local ffi = require( "ffi" )
-
-local kernel32 	= ffi.load( "kernel32.dll" )
-local user32 	= ffi.load( "user32.dll" )
-local comdlg32  = ffi.load( "Comdlg32.dll" )
-local gdi32     = ffi.load( "gdi32.dll" )
-
-require("ffi/win32")
 local fileio    = require("scripts/utils/fileio")
 ------------------------------------------------------------------------------------------------------------
 --package.preload['extern.mswindows.winmm'] = function()
@@ -60,27 +52,56 @@ local fileio    = require("scripts/utils/fileio")
 idi = { APPLICATION = ffi.cast('const char*', 32512) }
 idc = { ARROW = ffi.cast('const char*', 32512) }
 
-local reg = nil
+window_debug_class_reg = nil
 local count = 0
+
+------------------------------------------------------------------------------------------------------------
+
+function InitializeComponent(hWnd)
+
+    local hInstance = kernel32.GetModuleHandleA(nil)
+
+    -- Adding a Button.
+    local hBtn = user32.CreateWindowExA(user32.WS_EX_APPWINDOW, "BUTTON", "temp", bit.bor(user32.WS_CHILD, user32.WS_VISIBLE), 327, 7, 70, 21, hWnd, nil, hInstance, nil)
+    user32.SetWindowTextA(hBtn, "&Button")
+
+    -- Adding a Label.
+    local hLabel = user32.CreateWindowExA(user32.WS_EX_CLIENTEDGE, "STATIC", "temp", bit.bor(user32.WS_CHILD, user32.WS_VISIBLE), 7, 7, 50, 21, hWnd, nil, hInstance, nil)
+    user32.SetWindowTextA(hLabel, "Label:")
+
+    -- Adding a ListBox.
+    local hListBox = user32.CreateWindowExA(user32.WS_EX_CLIENTEDGE, "LISTBOX", "temp", bit.bor(user32.WS_CHILD, user32.WS_VISIBLE, user32.WS_VSCROLL, user32.ES_AUTOVSCROLL), 7, 35, 300, 200, hWnd, nil, hInstance, nil)
+
+    -- Adding a TextBox.
+    local hTextBox = user32.CreateWindowExA(user32.WS_EX_CLIENTEDGE, "EDIT", "temp", bit.bor(user32.WS_CHILD, user32.WS_VISIBLE, user32.ES_AUTOVSCROLL), 62, 7, 245, 21, hWnd, nil, hInstance, nil)
+    user32.SetWindowTextA(hTextBox, "Input text here...")
+end
 
 ------------------------------------------------------------------------------------------------------------
 
 function CreateWindow(px, py, wide, high)
 
 	local hInstance = kernel32.GetModuleHandleA(nil)
-	local CLASS_NAME = 'TestWindowClass'
-	
-	if (reg == nil ) then
-	
-		local classstruct = {}
+	local CLASS_NAME = 'DebugWindow'
+
+	if (window_debug_class_reg == nil ) then
+        -- Rich Edit.. nice...
+        kernel32.LoadLibraryA("Riched32.dll")
+
+        local classstruct = {}
 		classstruct.cbSize 		= ffi.sizeof( "WNDCLASSEXA" )
-		classstruct.style 		= bit.bor(user32.CS_HREDRAW, user32.CS_VREDRAW)
-	
+        classstruct.style       = 0
+
 		classstruct.lpfnWndProc = 
 		function(hwnd, msg, wparam, lparam)
 			if (msg == user32.WM_DESTROY) then
-				user32.PostQuitMessage(0)
+                print("Trying to quit from debug window.")
+				user32.PostQuitMessage(user32.WM_QUIT)
 				return 0
+--            elseif (msg == user32.WM_CREATE) then
+--                return 0
+--            elseif (msg == user32.WM_PAINT) then
+--                return 0
 			end
 			return user32.DefWindowProcA(hwnd, msg, wparam, lparam)
 		end
@@ -88,44 +109,50 @@ function CreateWindow(px, py, wide, high)
 		classstruct.cbClsExtra 		= 0
 		classstruct.cbWndExtra 		= 0
 		classstruct.hInstance 		= hInstance	
-		classstruct.hIcon 			= user32.LoadIconA(nil, idi.APPLICATION)
-		classstruct.hCursor 		= user32.LoadCursorA(nil, idc.ARROW)
-		classstruct.hbrBackground 	= nil
+		classstruct.hIcon 			= nil --user32.LoadIconA(nil, idi.APPLICATION)
+		classstruct.hCursor 		= nil --user32.LoadCursorA(nil, idc.ARROW)
+		classstruct.hbrBackground 	= user32.GetSysColorBrush(user32.COLOR_WINDOW)
 		classstruct.lpszMenuName 	= nil
 		classstruct.lpszClassName 	= CLASS_NAME
 		classstruct.hIconSm = nil
 		
-		local wndclass = ffi.new( "WNDCLASSEXA", classstruct )	
-		local reg = user32.RegisterClassExA( wndclass )
+		local wndclass = ffi.new( "WNDCLASSEXA", classstruct )
+		local window_debug_class_reg = user32.RegisterClassExA( wndclass )
 		
-		if (reg == 0) then
-			error('error #' .. mswin.GetLastError())
+		if (window_debug_class_reg == nil) then
+			error('error #' .. kernel32.GetLastError())
 		end
 	end 
-			
-	local hwnd = user32.CreateWindowExA( 0, CLASS_NAME, "Test Window", user32.WS_POPUP, px, py, wide, high, nil, nil, hInstance, nil)	
+
+	local hwnd = user32.CreateWindowExA( user32.WS_EX_CLIENTEDGE, CLASS_NAME, "Debug Window", user32.WS_OVERLAPPEDWINDOW, px, py, wide, high, nil, nil, hInstance, nil)
+    -- local hwnd_edit = user32.CreateWindowExA( 0x0, "RICHEDIT","text", bit.bor(user32.WS_BORDER, user32.WS_CHILD, user32.WS_VISIBLE, user32.ES_MULTILINE),10,10,300,300,hwnd,nil,hInstance,nil)
 	if (hwnd == nil) then
 		error 'unable to create window'
-	end
+    end
+
+    InitializeComponent(hwnd)
 	
-	user32.ShowWindow(hwnd, user32.SW_SHOW)	
+	user32.ShowWindow(hwnd, user32.SW_SHOW)
+    user32.UpdateWindow(hwnd)
+
 	return hwnd
 end
 
 ------------------------------------------------------------------------------------------------------------
 
-local msg = ffi.new 'MSG'
-
 function UpdateWindow(hwnd)
 
-	user32.UpdateWindow(hwnd)
-	if (user32.PeekMessageA(msg, nil, 0, 0, user32.PM_REMOVE) ~= 0) then
+    local msg = ffi.new("MSG")
+
+	while (user32.PeekMessageA(msg, nil, 0, 0, user32.PM_REMOVE) ~= 0) do
 		user32.TranslateMessage(msg)
 		user32.DispatchMessageA(msg)
---		if (msg.message == mswin.WM_QUIT) then
---			quitting = true
---		end
-	end
+		if (msg.message == user32.WM_QUIT) then
+			return 1
+		end
+    end
+
+    return 0
 end
 
 ------------------------------------------------------------------------------------------------------------

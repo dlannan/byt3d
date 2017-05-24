@@ -13,6 +13,35 @@ WM_frameMs	= 0.0
 WM_fps		= 0
 
 ------------------------------------------------------------------------------------------------------------
+-- Some platform specifics
+
+local attrib_list = {}
+
+if ffi.os == "OSX" then
+
+    --print('wm.display/dpy/r', wm.display, dpy, r)
+    attrib_list = {
+        --        egl.EGL_LEVEL, 0,
+        --        egl.EGL_SURFACE_TYPE, egl.EGL_WINDOW_BIT,
+        egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_ES2_BIT,
+        --        egl.EGL_NATIVE_RENDERABLE, egl.EGL_FALSE,
+        egl.EGL_DEPTH_SIZE, egl.EGL_DONT_CARE,
+        egl.EGL_NONE, egl.EGL_NONE
+    }
+elseif ffi.os == "Windows" then
+
+    --print('wm.display/dpy/r', wm.display, dpy, r)
+    attrib_list = {
+        --        egl.EGL_LEVEL, 0,
+        --        egl.EGL_SURFACE_TYPE, egl.EGL_WINDOW_BIT,
+        egl.EGL_RENDERABLE_TYPE, egl.EGL_OPENGL_ES2_BIT,
+        --        egl.EGL_NATIVE_RENDERABLE, egl.EGL_FALSE,
+        egl.EGL_DEPTH_SIZE, 24,
+        egl.EGL_NONE, egl.EGL_NONE
+    }
+end
+
+------------------------------------------------------------------------------------------------------------
 --- Only bother using SDL for Win/Linux/OSX platforms!!
 --- Use EGL only for Android and IOS.
 
@@ -54,8 +83,8 @@ end
 function InitSDL(ww, wh, fs)
 
 	ww, wh = GetSizeSDL(ww, wh / ww)
-	local sdlbits = bit.bor(sdl.SDL_RESIZABLE, sdl.SDL_DOUBLEBUF )
-	if(fs == 1) then sdlbits = bit.bor(sdl.SDL_FULLSCREEN, sdl.SDL_DOUBLEBUF ) end
+	local sdlbits = bit.bor(sdl.SDL_RESIZABLE, sdl.SDL_HWSURFACE, sdl.SDL_DOUBLEBUF, sdl.SDL_OPENGL  )
+	if(fs == 1) then sdlbits = bit.bor(sdl.SDL_HWSURFACE, sdl.SDL_FULLSCREEN, sdl.SDL_DOUBLEBUF, sdl.SDL_OPENGL ) end
 	
 	-- TODO: This needs to be able to be cross platform.
 	local screen = sdl.SDL_SetVideoMode( ww, wh, 32, sdlbits )
@@ -83,7 +112,7 @@ function InitSDL(ww, wh, fs)
 	local prev_time, curr_time, fps = 0, 0, 0
 	
 	-- Build a window structure used for the EGL display setup.
-	local windowStruct 			=  {  }
+	local windowStruct 			=  {}
 	windowStruct.window 		= window
 	windowStruct.display 		= display
     windowStruct.screen         = sdl_screen
@@ -178,14 +207,6 @@ function InitEGL(wm)
 	
 	local dpy      		= egl.eglGetDisplay( ffi.cast("intptr_t", wm.display ))
 	local initctx  		= egl.eglInitialize( dpy, nil, nil )
-	
-	--print('wm.display/dpy/r', wm.display, dpy, r)
-	local attrib_list = { 	
-		  egl.EGL_RENDERABLE_TYPE,  egl.EGL_OPENGL_ES2_BIT,
-		  egl.EGL_RED_SIZE, 8, egl.EGL_GREEN_SIZE, 8, egl.EGL_BLUE_SIZE, 8, egl.EGL_ALPHA_SIZE, 8,
-		  egl.EGL_DEPTH_SIZE, 24,
-		  egl.EGL_NONE
-    }
     
     local attsize 		= table.getn(attrib_list)
 	local cfg_attr 		= ffi.new( "EGLint["..attsize.."]", attrib_list )
@@ -201,21 +222,24 @@ function InitEGL(wm)
 	local attrList 		= ffi.new( "EGLint[3]", attrValues)
 	
 	local surf     		= egl.eglCreateWindowSurface( dpy, cfg[0], wm.window, attrList )
-	if(surf == egl.EGL_NO_SURFACE) then print("Cannot create surface: ", egl.eglGetError()) end
+	if(surf == nil) then print("Cannot create surface: ", egl.eglGetError()) end
 
 	attrValues 			= { egl.EGL_CONTEXT_CLIENT_VERSION, 2, egl.EGL_NONE }
 	attrList 			= ffi.new( "EGLint[3]", attrValues)
 	
 	local cfg_ctx   	= egl.eglCreateContext( dpy, cfg[0], nil, attrList )
-	if(cfg_ctx == egl.EGL_NO_CONTEXT) then print("Cannot create EGL Context:", egl.eglGetError()) end
+	if(cfg_ctx == nil) then print("Cannot create EGL Context:", egl.eglGetError()) end
 	
 	local r        		= egl.eglMakeCurrent( dpy, surf, surf, cfg_ctx )
 	--print('surf/ctx', surf, r0, ctx, r, n_cfg[0])
 
-	local dpymode = ffi.new("SDL_DisplayMode[1]")
-	local currdpy = sdl.SDL_GetCurrentDisplayMode();
-	local res = sdl.SDL_GetDesktopDisplayMode(currdpy, dpymode)
+	local dpymode       = ffi.new("SDL_DisplayMode[1]")
+	local currdpy       = sdl.SDL_GetCurrentDisplayMode();
+	local res           = sdl.SDL_GetDesktopDisplayMode(currdpy, dpymode)
 	print("Screen Display:", dpymode[0].w, dpymode[0].h, dpymode[0].refresh_rate)
+
+    -- Enable "Free Running" mode - non VSync
+    egl.eglSwapInterval( dpy, 0 )
 	
 	return { surf=surf, ctx=cfg_ctx, dpy=dpy, config=cfg[0], rconf=r, display=dpymode[0] }
 end

@@ -72,9 +72,9 @@ end
 function PEditorFolder:Begin()
 
     -- Screenshot with gui and with save file
-    gBackground = Gcairo:ScreenShot(1)
-    gBackground.scalex = Gcairo.WIDTH / gBackground.width
-    gBackground.scaley = Gcairo.HEIGHT / gBackground.height
+    self.bgimage = Gcairo:ScreenShot(1)
+    self.bgtex = byt3dTexture:New()
+    self.bgtex:FromCairoImage(Gcairo, "bgimage", self.bgimage)
 
     Gcairo.file_FileSelect 	= nil
     Gcairo.file_LastSelect	= nil
@@ -82,6 +82,8 @@ function PEditorFolder:Begin()
     Gcairo.dirlist		= nil
 
     --print("Starting AssetManager....")
+    self.bgmesh = byt3dMesh:New()
+    self.bgmesh:SetShader(Gcairo.uiShader)
 
     self.panel_move = { pos = 0.0 }
     self.tween 	= tween(0.5, self.panel_move, { pos=ASSETPANEL_WIDTH }, 'outExpo', EditorAssetPanelSlideDone, self, "PanelLeft")
@@ -94,13 +96,12 @@ function PEditorFolder:Update(mxi, myi, buttons)
 
     local tcolor = { r=1.0, b=1.0, g=1.0, a=1.0 }
     local saved = Gcairo.style.button_color
+
     Gcairo:Begin()
-    if gBackground then
-        Gcairo:RenderImage(gBackground, 0, 0, 0)
-        Gcairo.style.button_color = { r=0, g=0, b=0, a=0.8 }
-        Gcairo:RenderBox(0, 0, Gcairo.WIDTH, Gcairo.HEIGHT, 0)
-        Gcairo.style.button_color = saved
-    end
+
+    Gcairo.style.button_color = { r=0, g=0, b=0, a=0.7 }
+    Gcairo:RenderBox(0, 0, Gcairo.WIDTH, Gcairo.HEIGHT, 0)
+    Gcairo.style.button_color = saved
 
     local left = Gcairo.WIDTH - self.panel_move.pos
     Gcairo:RenderText( " Select a folder:", left, 18.0, 18, tcolor)
@@ -116,6 +117,10 @@ end
 ------------------------------------------------------------------------------------------------------------
 
 function PEditorFolder:Render()
+
+    Gcairo.uiShader:Use()
+    self.bgmesh:SetTexture(self.bgtex)
+    self.bgmesh:RenderTextureRect(-1, 1, 2, -2)
 
     Gcairo:Render()
 end

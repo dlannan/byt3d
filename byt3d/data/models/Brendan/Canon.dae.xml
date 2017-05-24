@@ -94,6 +94,20 @@
 				</transform>
 				<blocks type="table">
 					<Cannon_mesh_1 type="table">
+						<boundCtr type="table">
+							<1 type="number">0</1>
+							<2 type="number">0</2>
+							<3 type="number">0</3>
+							<4 type="number">0</4>
+						</boundCtr>
+						<boundMin type="table">
+							<1 type="number">-3.0058450698853</1>
+							<2 type="number">-5.7367582321167</2>
+							<3 type="number">-2.31294298172</3>
+						</boundMin>
+						<shadows_cast type="number">1</shadows_cast>
+						<priority type="number">1024</priority>
+						<shadows_recv type="number">1</shadows_recv>
 						<blockType type="string">byt3dMesh</blockType>
 						<ibuffers type="table">
 							<1 type="table">
@@ -102,12 +116,6 @@
 								<indexBuffer type="cdata" ffitype="unsigned short" arraysize="35778">byt3d\data\models\Brendan\Canon_dae_xml_1_indexBuffer.bin</indexBuffer>
 							</1>
 						</ibuffers>
-						<boundMin type="table">
-							<1 type="number">-3.0058450698853</1>
-							<2 type="number">-5.7367582321167</2>
-							<3 type="number">-2.31294298172</3>
-						</boundMin>
-						<priority type="number">1024</priority>
 						<boundMax type="table">
 							<1 type="number">3.0058450698853</1>
 							<2 type="number">5.7367582321167</2>
@@ -163,19 +171,19 @@
 		</children>
 	</node>
 	<boundMax type="table">
-		<1 type="number">-inf</1>
-		<2 type="number">-inf</2>
-		<3 type="number">-inf</3>
+		<1 type="number">3.0058450698853</1>
+		<2 type="number">5.7367582321167</2>
+		<3 type="number">2.31294298172</3>
 		<4 type="number">0</4>
 	</boundMax>
 	<boundMin type="table">
-		<1 type="number">inf</1>
-		<2 type="number">inf</2>
-		<3 type="number">inf</3>
+		<1 type="number">-3.0058450698853</1>
+		<2 type="number">-5.7367582321167</2>
+		<3 type="number">-2.31294298172</3>
 		<4 type="number">0</4>
 	</boundMin>
-	<modelMat type="number">0</modelMat>
 	<filePath type="string"></filePath>
+	<modelMat type="number">0</modelMat>
 	<fileName type="string"></fileName>
-	<name type="string"></name>
+	<name type="string">unnamed</name>
 </byt3dModel>
