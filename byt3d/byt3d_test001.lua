@@ -79,9 +79,9 @@ require("shaders/PlasmaShader")
 -- Simple little icon render func (probably should go in cairo)
 
 function RenderIcon( icon )
-	if(icon.enabled==0) then 
+	if(icon.enabled==0) then
 		Gcairo:RenderImage(icon.disableImage, icon.x, icon.y, 0.0)
-	else 
+	else
 		Gcairo:RenderImage(icon.enableImage, icon.x, icon.y, 0.0)
 	end
 end
@@ -92,10 +92,10 @@ function main()
 
 	local wm = InitSDL(WINwidth, WINheight)
 	local eglInfo = InitEGL(wm)
-	
+
 	wm:update()
 
-    print("OpenGL version string: "..ffi.string(gl.glGetString(gl.GL_VERSION))) 
+    print("OpenGL version string: "..ffi.string(gl.glGetString(gl.GL_VERSION)))
     print("OpenGL renderer string: "..ffi.string(gl.glGetString(gl.GL_RENDERER)))
     print("OpenGL vendor string: "..ffi.string(gl.glGetString(gl.GL_VENDOR)))
 
@@ -108,33 +108,33 @@ function main()
 	local loc_time		= gl.glGetUniformLocation( bgShader.info.prog, "time" )
 	local loc_res		= gl.glGetUniformLocation( bgShader.info.prog, "resolution" )
 
-	
+
 	-- Some icons on screen to enable/disable
 	icons	=	{}
-	icons.facebook = { 
-			x=400, y=60, enabled=0, 
-			enableImage=Gcairo:LoadImage("fbEnable", "gary/icons/NORMAL/64/facebook_64.png"),
-			disableImage=Gcairo:LoadImage("fbDisable", "gary/icons/DIS/64/facebook_64.png"),
-	}	
-	
-	icons.twitter = { 
-			x=470, y=60, enabled=0, 
-			enableImage=Gcairo:LoadImage("twEnable", "gary/icons/NORMAL/64/twitter_64.png"),
-			disableImage=Gcairo:LoadImage("twDisable", "gary/icons/DIS/64/twitter_64.png"),
-	}	
+	icons.facebook = {
+			x=400, y=60, enabled=0,
+			enableImage=Gcairo:LoadImage("fbEnable", "byt3d/data/icons/generic_obj_add_64.png"),
+			disableImage=Gcairo:LoadImage("fbDisable", "byt3d/data/icons/generic_obj_add_64.png"),
+	}
 
-	icons.google = { 
-			x=540, y=60, enabled=0, 
-			enableImage=Gcairo:LoadImage("ggEnable", "gary/icons/NORMAL/64/google_64.png"),
-			disableImage=Gcairo:LoadImage("ggDisable", "gary/icons/DIS/64/google_64.png"),
-	}	
-	
-	local image1 = Gcairo:LoadImage("icon1", "gary/icons/NORMAL/64/facebook_64.png")
-	
+	icons.twitter = {
+			x=470, y=60, enabled=0,
+			enableImage=Gcairo:LoadImage("twEnable", "byt3d/data/icons/generic_obj_add_64.png"),
+			disableImage=Gcairo:LoadImage("twDisable", "byt3d/data/icons/generic_obj_add_64.png"),
+	}
+
+	icons.google = {
+			x=540, y=60, enabled=0,
+			enableImage=Gcairo:LoadImage("ggEnable", "byt3d/data/icons/generic_obj_add_64.png"),
+			disableImage=Gcairo:LoadImage("ggDisable", "byt3d/data/icons/generic_obj_add_64.png"),
+	}
+
+	local image1 = Gcairo:LoadImage("icon1", "byt3d/data/icons/generic_obj_add_64.png")
+
 	-- Test the xml Loader
 	local lsurf = Gcairo:LoadSvg("byt3d/data/svg/test01.svg")
 	-- DumpXml(lsurf)
-	
+
 	-- TODO: This will change substantially. Will move to a state system when testing/prototyping is done
 	--		 Do not rely on this loop! It will be gone soon!
 	while wm:update() do
@@ -142,24 +142,24 @@ function main()
         local tcolor = { r=1.0, b=1.0, g=1.0, a=1.0 }
         Gcairo:Begin()
 		gl.glViewport( 0, 0, WINwidth, WINheight )
-		
+
 		-- No need for clear when BG is being written
 --		gl.glClearColor (1.0, 0.0, 0.0, 1.0)
 --		gl.glClear (  bit.bor(gl.GL_DEPTH_BUFFER_BIT, gl.GL_COLOR_BUFFER_BIT) )
 		gl.glUseProgram( bgShader.info.prog )
-		
+
         gl.glUniform1f(loc_time, os.clock() )
         gl.glUniform2f(loc_res, WINwidth, WINheight)
-           
+
         gl.glVertexAttribPointer( loc_bgposition, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, Gcairo.vertexArray )
         gl.glEnableVertexAttribArray( loc_bgposition )
 
         gl.glDrawElements( gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_SHORT, Gcairo.ibuffer )
         gl.glDisableVertexAttribArray( loc_bgposition )
-		
+
         Gcairo:RenderBox(30, 30, 200, 50, 5)
         Gcairo:RenderText("GARY", 45, 65, 30, tcolor )
-		
+
 		-- A Content window of 'stuff' to show
 		local content = Gcairo:List("", 5, 5, 400, 300)
 		local nodes = {}
@@ -167,24 +167,24 @@ function main()
 		nodes[2] = { name="   some 1234", ntype=CAIRO_TYPE.TEXT, size=20 }
 		nodes[3] = { name="   more 1234", ntype=CAIRO_TYPE.TEXT, size=20 }
 		nodes[4] = { name="Do Stuff", ntype=CAIRO_TYPE.BUTTON, size=30, border=2, corner=5, colorA=tcolor, colorB=tcolor }
-		
+
 		local line1 = {}
 		line1[1] = { name="test1", ntype=CAIRO_TYPE.IMAGE, image=image1, size=30, color=tcolor }
 		line1[2] = { name="space1", size=50 }
 		line1[3] = { name="test2", ntype=CAIRO_TYPE.IMAGE, image=image1, size=40, color=tcolor }
-		
+
 		nodes[5] = { name="space2", size=40 }
 		nodes[6] = { name="line1", ntype=CAIRO_TYPE.HLINE, size=30, nodes = line1 }
 		nodes[7] = { name="Another Line", ntype=CAIRO_TYPE.TEXT, size=30 }
 		content.nodes = nodes
-		
+
 		-- Render a slideOut object on left side of screen
-        Gcairo:SlideOut("Main Menu", CAIRO_UI.LEFT, 100, 40, 5, content)
-        Gcairo:Exploder("Test1", nil, 200, 500, 100, 20, 5, content)
-        Gcairo:Exploder("Test2", image1, 400, 600, 120, 100, 5, content)
+        Gcairo:SlideOut("Main Menu", nil, CAIRO_UI.LEFT, 100, 40, 5, content)
+        Gcairo:Exploder("Test1", nil, CAIRO_UI.LEFT, 200, 500, 100, 20, 5, content)
+        Gcairo:Exploder("Test2", image1, CAIRO_UI.LEFT, 400, 600, 120, 100, 5, content)
 
         Gcairo:RenderSvg(lsurf)
-		
+
 		-- Render Icons
 		if(wm.MouseButton[1] == true) then icons.facebook.enabled=1 else icons.facebook.enabled=0 end
 		if(wm.MouseButton[2] == true) then icons.twitter.enabled=1 else icons.twitter.enabled=0 end
@@ -196,9 +196,9 @@ function main()
 
         Gcairo:Update(move.x, move.y, buttons)
         Gcairo:Render()
-		
+
 --	    draw_string( 0, 0, "Some Text" )
---	  
+--
 --		gl.glVertexAttribPointer( loc_position, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, vbo )
 --		gl.glEnableVertexAttribArray( loc_position )
 --		gl.glDrawArrays( gl.GL_POINTS, 0, vbo_index/3)
@@ -209,11 +209,11 @@ function main()
 	end
 
     Gcairo:Finish()
-	
+
 	egl.eglDestroyContext( eglInfo.dpy, eglInfo.ctx )
 	egl.eglDestroySurface( eglInfo.dpy, eglInfo.surf )
 	egl.eglTerminate( eglInfo.dpy )
-	
+
 	wm:exit()
 end
 
