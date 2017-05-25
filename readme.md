@@ -1,12 +1,11 @@
 ---
 title: byt3d
-description: Simlple little rendering and app development toolkit using luajit.
+description: Simple 2D/3D toolkit using luajit.
 author: David Lannan
 tags: luajit, lua, render engine, 3d, opengles
 colors: light yellow
 created:  2017 May 25
 modified: 2017 May 25
-
 ---
 
 byt3d
