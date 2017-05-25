@@ -112,21 +112,21 @@ function main()
 	-- Some icons on screen to enable/disable
 	icons	=	{}
 	icons.facebook = {
-			x=400, y=60, enabled=0,
-			enableImage=Gcairo:LoadImage("fbEnable", "byt3d/data/icons/generic_obj_add_64.png"),
-			disableImage=Gcairo:LoadImage("fbDisable", "byt3d/data/icons/generic_obj_add_64.png"),
+			x=200, y=60, enabled=0,
+			enableImage=Gcairo:LoadImage("fbEnable", "byt3d/data/icons/generic_obj_ask_64.png"),
+			disableImage=Gcairo:LoadImage("fbDisable", "byt3d/data/icons/generic_obj_box_64.png"),
 	}
 
 	icons.twitter = {
-			x=470, y=60, enabled=0,
+			x=270, y=60, enabled=0,
 			enableImage=Gcairo:LoadImage("twEnable", "byt3d/data/icons/generic_obj_add_64.png"),
-			disableImage=Gcairo:LoadImage("twDisable", "byt3d/data/icons/generic_obj_add_64.png"),
+			disableImage=Gcairo:LoadImage("twDisable", "byt3d/data/icons/generic_obj_box_64.png"),
 	}
 
 	icons.google = {
-			x=540, y=60, enabled=0,
-			enableImage=Gcairo:LoadImage("ggEnable", "byt3d/data/icons/generic_obj_add_64.png"),
-			disableImage=Gcairo:LoadImage("ggDisable", "byt3d/data/icons/generic_obj_add_64.png"),
+			x=340, y=60, enabled=0,
+			enableImage=Gcairo:LoadImage("ggEnable", "byt3d/data/icons/generic_obj_home_64.png"),
+			disableImage=Gcairo:LoadImage("ggDisable", "byt3d/data/icons/generic_obj_box_64.png"),
 	}
 
 	local image1 = Gcairo:LoadImage("icon1", "byt3d/data/icons/generic_obj_add_64.png")
@@ -166,7 +166,7 @@ function main()
 		nodes[1] = { name="Information", ntype=CAIRO_TYPE.TEXT, size=20 }
 		nodes[2] = { name="   some 1234", ntype=CAIRO_TYPE.TEXT, size=20 }
 		nodes[3] = { name="   more 1234", ntype=CAIRO_TYPE.TEXT, size=20 }
-		nodes[4] = { name="Do Stuff", ntype=CAIRO_TYPE.BUTTON, size=30, border=2, corner=5, colorA=tcolor, colorB=tcolor }
+		nodes[4] = { name="Do Stuff", ntype=CAIRO_TYPE.BUTTON, size=20, border=2, corner=5, colorA=tcolor, colorB=tcolor }
 
 		local line1 = {}
 		line1[1] = { name="test1", ntype=CAIRO_TYPE.IMAGE, image=image1, size=30, color=tcolor }
@@ -179,11 +179,11 @@ function main()
 		content.nodes = nodes
 
 		-- Render a slideOut object on left side of screen
-        Gcairo:SlideOut("Main Menu", nil, CAIRO_UI.LEFT, 100, 40, 5, content)
-        Gcairo:Exploder("Test1", nil, CAIRO_UI.LEFT, 200, 500, 100, 20, 5, content)
-        Gcairo:Exploder("Test2", image1, CAIRO_UI.LEFT, 400, 600, 120, 100, 5, content)
+        Gcairo:SlideOut("Main Menu", nil, CAIRO_UI.LEFT, 100, 40, 0, content)
+        Gcairo:Exploder("Test1", nil, CAIRO_UI.LEFT, 200, 300, 100, 20, 0, content)
+        Gcairo:Exploder("Test2", image1, CAIRO_UI.LEFT, 200, 400, 120, 100, 0, content)
 
-        Gcairo:RenderSvg(lsurf)
+        --Gcairo:RenderSvg(lsurf)
 
 		-- Render Icons
 		if(wm.MouseButton[1] == true) then icons.facebook.enabled=1 else icons.facebook.enabled=0 end
